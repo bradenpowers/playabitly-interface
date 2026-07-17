@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maltby Playability Factor — Iron Ratings</title>
+<style>
+  :root {
+    --bg:         #F1F4F0;
+    --bg-2:       #E4E9E2;
+    --bg-3:       #D4DCD1;
+    --surface:    #FFFFFF;
+    --border:     #C8D4C4;
+    --text:       #1E2A1C;
+    --text-2:     #4A5C47;
+    --text-3:     #7A8F77;
+    --accent:     #2E7D4F;
+    --accent-dim: #D4EBD9;
+
+    /* Category colors: green (forgiving) → sienna (demanding) */
+    --c-ugi:  #1A6B3A;
+    --c-sgi:  #2D8E55;
+    --c-gi:   #5B8A2E;
+    --c-conv: #B06A20;
+    --c-cls:  #8B4C2A;
+    --c-pcls: #5C2E18;
+
+    --c-ugi-bg:  #D0EDD8;
+    --c-sgi-bg:  #CCE8D6;
+    --c-gi-bg:   #DFE9C8;
+    --c-conv-bg: #F2DFC5;
+    --c-cls-bg:  #EDD5C0;
+    --c-pcls-bg: #DECAB8;
+
+    --row-hover: #EAF0E8;
+    --th-bg:     #E0E8DD;
+    --shadow:    0 1px 3px rgba(30,42,28,.08);
+    --shadow-lg: 0 4px 16px rgba(30,42,28,.12);
+    --radius:    6px;
+    --mono:      "Menlo", "SF Mono", "Cascadia Code", ui-monospace, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:         #161C15;
+      --bg-2:       #1E2820;
+      --bg-3:       #253027;
+      --surface:    #1E2820;
+      --border:     #2E3D2A;
+      --text:       #D8E4D4;
+      --text-2:     #92A88E;
+      --text-3:     #5E7559;
+      --accent:     #4CAF72;
+      --accent-dim: #1C3A24;
+
+      --c-ugi:  #5EC47A;
+      --c-sgi:  #4DB869;
+      --c-gi:   #8EB838;
+      --c-conv: #D4884A;
+      --c-cls:  #C07050;
+      --c-pcls: #A85A38;
+
+      --c-ugi-bg:  #1A3222;
+      --c-sgi-bg:  #183020;
+      --c-gi-bg:   #1E2E10;
+      --c-conv-bg: #2E1C0C;
+      --c-cls-bg:  #2A1408;
+      --c-pcls-bg: #221006;
+
+      --row-hover: #243428;
+      --th-bg:     #1A2A1C;
+      --shadow:    0 1px 3px rgba(0,0,0,.3);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,.4);
+    }
+  }
+
+  :root[data-theme="light"] {
+    --bg:         #F1F4F0;
+    --bg-2:       #E4E9E2;
+    --bg-3:       #D4DCD1;
+    --surface:    #FFFFFF;
+    --border:     #C8D4C4;
+    --text:       #1E2A1C;
+    --text-2:     #4A5C47;
+    --text-3:     #7A8F77;
+    --accent:     #2E7D4F;
+    --accent-dim: #D4EBD9;
+    --c-ugi:  #1A6B3A; --c-sgi:  #2D8E55; --c-gi:   #5B8A2E;
+    --c-conv: #B06A20; --c-cls:  #8B4C2A; --c-pcls: #5C2E18;
+    --c-ugi-bg:  #D0EDD8; --c-sgi-bg:  #CCE8D6; --c-gi-bg:   #DFE9C8;
+    --c-conv-bg: #F2DFC5; --c-cls-bg:  #EDD5C0; --c-pcls-bg: #DECAB8;
+    --row-hover: #EAF0E8; --th-bg: #E0E8DD;
+    --shadow: 0 1px 3px rgba(30,42,28,.08); --shadow-lg: 0 4px 16px rgba(30,42,28,.12);
+  }
+
+  :root[data-theme="dark"] {
+    --bg:         #161C15;
+    --bg-2:       #1E2820;
+    --bg-3:       #253027;
+    --surface:    #1E2820;
+    --border:     #2E3D2A;
+    --text:       #D8E4D4;
+    --text-2:     #92A88E;
+    --text-3:     #5E7559;
+    --accent:     #4CAF72;
+    --accent-dim: #1C3A24;
+    --c-ugi:  #5EC47A; --c-sgi:  #4DB869; --c-gi:   #8EB838;
+    --c-conv: #D4884A; --c-cls:  #C07050; --c-pcls: #A85A38;
+    --c-ugi-bg:  #1A3222; --c-sgi-bg:  #183020; --c-gi-bg:   #1E2E10;
+    --c-conv-bg: #2E1C0C; --c-cls-bg:  #2A1408; --c-pcls-bg: #221006;
+    --row-hover: #243428; --th-bg: #1A2A1C;
+    --shadow: 0 1px 3px rgba(0,0,0,.3); --shadow-lg: 0 4px 16px rgba(0,0,0,.4);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 15px; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ─── Header ─────────────────────────────────────────────── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 28px 16px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-left { display: flex; flex-direction: column; gap: 2px; }
+
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -.02em;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-size: .8rem;
+    color: var(--text-3);
+    margin-top: 2px;
+  }
+
+  .theme-toggle {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: .8rem;
+    color: var(--text-2);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background .15s, color .15s;
+  }
+  .theme-toggle:hover { background: var(--bg-3); color: var(--text); }
+
+  /* ─── Controls ────────────────────────────────────────────── */
+  .controls {
+    padding: 14px 28px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    position: sticky;
+    top: 74px;
+    z-index: 90;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 360px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-3);
+    pointer-events: none;
+    font-size: 14px;
+  }
+
+  .search {
+    width: 100%;
+    padding: 7px 10px 7px 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: .875rem;
+    color: var(--text);
+    outline: none;
+    font-family: inherit;
+    transition: border-color .15s;
+  }
+  .search:focus { border-color: var(--accent); }
+  .search::placeholder { color: var(--text-3); }
+
+  select {
+    padding: 7px 28px 7px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: .875rem;
+    color: var(--text);
+    outline: none;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A8F77' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color .15s;
+  }
+  select:focus { border-color: var(--accent); }
+
+  .control-label {
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    white-space: nowrap;
+  }
+
+  .control-group { display: flex; align-items: center; gap: 6px; }
+
+  .results-count {
+    margin-left: auto;
+    font-size: .8rem;
+    color: var(--text-3);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ─── Category pills (filter bar) ────────────────────────── */
+  .cat-filter-bar {
+    padding: 8px 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 117px;
+    z-index: 89;
+  }
+
+  .cat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: opacity .15s, transform .1s;
+    user-select: none;
+  }
+  .cat-pill:hover { transform: translateY(-1px); }
+  .cat-pill .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .cat-pill.inactive { opacity: .45; }
+
+  .cat-pill[data-cat="Ultra Game Improvement"] { background: var(--c-ugi-bg); color: var(--c-ugi); border-color: var(--c-ugi); }
+  .cat-pill[data-cat="Super Game Improvement"] { background: var(--c-sgi-bg); color: var(--c-sgi); border-color: var(--c-sgi); }
+  .cat-pill[data-cat="Game Improvement"]       { background: var(--c-gi-bg);  color: var(--c-gi);  border-color: var(--c-gi); }
+  .cat-pill[data-cat="Conventional"]           { background: var(--c-conv-bg); color: var(--c-conv); border-color: var(--c-conv); }
+  .cat-pill[data-cat="Classic"]                { background: var(--c-cls-bg); color: var(--c-cls); border-color: var(--c-cls); }
+  .cat-pill[data-cat="Players Classic"]        { background: var(--c-pcls-bg); color: var(--c-pcls); border-color: var(--c-pcls); }
+
+  .cat-pill[data-cat="Ultra Game Improvement"] .dot { background: var(--c-ugi); }
+  .cat-pill[data-cat="Super Game Improvement"] .dot { background: var(--c-sgi); }
+  .cat-pill[data-cat="Game Improvement"]       .dot { background: var(--c-gi); }
+  .cat-pill[data-cat="Conventional"]           .dot { background: var(--c-conv); }
+  .cat-pill[data-cat="Classic"]                .dot { background: var(--c-cls); }
+  .cat-pill[data-cat="Players Classic"]        .dot { background: var(--c-pcls); }
+
+  /* ─── Table wrapper ────────────────────────────────────────── */
+  .table-wrapper {
+    overflow-x: auto;
+    padding: 0 28px 40px;
+    margin-top: 16px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: .875rem;
+  }
+
+  thead { position: sticky; top: 0; z-index: 10; }
+
+  th {
+    background: var(--th-bg);
+    border-top: 1px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    padding: 9px 14px;
+    text-align: left;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  th:first-child { border-radius: var(--radius) 0 0 0; }
+  th:last-child  { border-radius: 0 var(--radius) 0 0; }
+
+  th.sorted { color: var(--accent); }
+
+  th .sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    opacity: .4;
+    font-size: .65rem;
+    transition: opacity .15s;
+  }
+  th.sorted .sort-arrow { opacity: 1; }
+
+  tbody tr {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+  tbody tr:hover { background: var(--row-hover); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    line-height: 1.35;
+  }
+
+  .td-brand {
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .td-model { color: var(--text); }
+
+  .td-year {
+    font-variant-numeric: tabular-nums;
+    color: var(--text-2);
+    white-space: nowrap;
+  }
+
+  .td-mpf {
+    font-family: var(--mono);
+    font-size: .9rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .mpf-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mpf-bar {
+    height: 4px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    background: var(--c-ugi);
+    opacity: .7;
+  }
+
+  .cat-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+    white-space: nowrap;
+  }
+
+  .cat-badge[data-cat="Ultra Game Improvement"] { background: var(--c-ugi-bg); color: var(--c-ugi); }
+  .cat-badge[data-cat="Super Game Improvement"] { background: var(--c-sgi-bg); color: var(--c-sgi); }
+  .cat-badge[data-cat="Game Improvement"]       { background: var(--c-gi-bg);  color: var(--c-gi);  }
+  .cat-badge[data-cat="Conventional"]           { background: var(--c-conv-bg); color: var(--c-conv); }
+  .cat-badge[data-cat="Classic"]                { background: var(--c-cls-bg); color: var(--c-cls); }
+  .cat-badge[data-cat="Players Classic"]        { background: var(--c-pcls-bg); color: var(--c-pcls); }
+
+  .no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-3);
+    font-size: .95rem;
+  }
+
+  /* ─── Legend ───────────────────────────────────────────────── */
+  .legend {
+    padding: 0 28px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    font-size: .75rem;
+    color: var(--text-3);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ─── Footer ────────────────────────────────────────────────── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 16px 28px;
+    font-size: .75rem;
+    color: var(--text-3);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .footer a { color: var(--accent); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .header { padding: 14px 16px 12px; flex-wrap: wrap; }
+    .controls, .cat-filter-bar { padding: 10px 16px; }
+    .table-wrapper { padding: 0 0 32px; }
+    td, th { padding: 8px 10px; }
+    .cat-filter-bar { top: 104px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <span class="eyebrow">Ralph Maltby</span>
+    <h1 class="title">Maltby Playability Factor</h1>
+    <p class="subtitle">Iron & Iron-Wood Ratings — 1,057 clubs across 47 manufacturers</p>
+  </div>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle color scheme">◑ Theme</button>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="search" class="search" id="searchInput" placeholder="Search brand or model…" autocomplete="off" spellcheck="false">
+  </div>
+
+  <div class="control-group">
+    <label class="control-label" for="brandSelect">Brand</label>
+    <select id="brandSelect">
+      <option value="">All brands</option>
+    </select>
+  </div>
+
+  <div class="control-group">
+    <label class="control-label" for="yearMin">Year</label>
+    <select id="yearMin">
+      <option value="">From</option>
+    </select>
+    <span class="control-label">–</span>
+    <select id="yearMax">
+      <option value="">To</option>
+    </select>
+  </div>
+
+  <span class="results-count" id="resultsCount"></span>
+</div>
+
+<div class="cat-filter-bar" id="catFilterBar"></div>
+
+<div class="table-wrapper">
+  <table id="mpfTable" aria-label="MPF Iron Ratings">
+    <thead>
+      <tr>
+        <th data-col="brand" tabindex="0">Brand <span class="sort-arrow">↕</span></th>
+        <th data-col="model" tabindex="0">Model <span class="sort-arrow">↕</span></th>
+        <th data-col="year" tabindex="0">Year <span class="sort-arrow">↕</span></th>
+        <th data-col="mpf" tabindex="0">MPF Score <span class="sort-arrow">↕</span></th>
+        <th data-col="category" tabindex="0">Category <span class="sort-arrow">↕</span></th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  <div class="no-results" id="noResults" style="display:none">No clubs match your filters.</div>
+</div>
+
+<div class="footer">
+  <span>Data sourced from <a href="https://www.golfworks.com/head-mpf-ratings/" target="_blank" rel="noopener">GolfWorks MPF Ratings</a> — Ralph Maltby Playability Factor</span>
+  <span>MPF measures iron playability; higher = more forgiving</span>
+</div>
+
+<script>
+const DATA = [{"brand":"Maltby","model":"Outburst NT","year":2005,"mpf":1328,"category":"Ultra Game Improvement"},{"brand":"Cleveland","model":"Zipcore XL #7","year":2025,"mpf":887,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Outburst Plus","year":2002,"mpf":1262,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King F9 Speedback #6","year":2019,"mpf":887,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Glider-X","year":2005,"mpf":1209,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Logic Pro Forged","year":2000,"mpf":886,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Fusion Wide Sole #6","year":2006,"mpf":1203,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"S3 Max #6","year":2011,"mpf":885,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Logic Tech","year":1999,"mpf":1192,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"KE4 Tour","year":2007,"mpf":884,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Logic Tech","year":2003,"mpf":1191,"category":"Ultra Game Improvement"},{"brand":"MacGregor","model":"The Doctor RX #5","year":1993,"mpf":884,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Xtreme X-2","year":2004,"mpf":1185,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"F-Max SuperLite #6","year":2019,"mpf":883,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Outburst","year":2000,"mpf":1169,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"Adapt DS #6","year":2025,"mpf":882,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"FT iBrid #6","year":2008,"mpf":1160,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Logic Kidz Professional","year":2000,"mpf":882,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Hawkeye VFT Tungsten inj.","year":2002,"mpf":1155,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER OS","year":2008,"mpf":881,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"FT iBrid #5 Transition Hybrid","year":2008,"mpf":1153,"category":"Ultra Game Improvement"},{"brand":"Cleveland","model":"Launcher LP #6","year":2006,"mpf":881,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Hybrid ST #6","year":2008,"mpf":1147,"category":"Ultra Game Improvement"},{"brand":"Toski","model":"Target TS60 Hybrid","year":2008,"mpf":880,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Tungsten Injected Ti","year":2002,"mpf":1142,"category":"Ultra Game Improvement"},{"brand":"Nicklaus","model":"Polarity MTR #6","year":2008,"mpf":879,"category":"Ultra Game Improvement"},{"brand":"Maxfli","model":"Torque Arm","year":1997,"mpf":1116,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Cobra S9 Ladies’ #7","year":2006,"mpf":879,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha (original)","year":1995,"mpf":1111,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"DM Pro Steel","year":2004,"mpf":879,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Logic Gold","year":2000,"mpf":1077,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Rogue #6","year":2018,"mpf":878,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha Gold","year":1997,"mpf":1063,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"LTech High Launch Women’s #6","year":2011,"mpf":878,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"X-20 #6","year":2007,"mpf":1051,"category":"Ultra Game Improvement"},{"brand":"Ping","model":"III","year":1977,"mpf":878,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"X-18 #6","year":2004,"mpf":1040,"category":"Ultra Game Improvement"},{"brand":"Titleist","model":"T300 #6","year":2021,"mpf":877,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"AST Hybrid #6","year":2005,"mpf":1039,"category":"Ultra Game Improvement"},{"brand":"TaylorMade","model":"Qi #6","year":2024,"mpf":876,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Great Big Bertha Tungsten inj.","year":1997,"mpf":1038,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Cobra S9 Senior #7","year":2006,"mpf":872,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Steelhead X-16","year":2003,"mpf":1037,"category":"Ultra Game Improvement"},{"brand":"Mizuno","model":"JPX 800 HD #6","year":2012,"mpf":871,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha Fusion #6","year":2004,"mpf":1031,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Cobra SS-i #6","year":2004,"mpf":871,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"S2 H2","year":1988,"mpf":1029,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"MXO Xtreme","year":2004,"mpf":871,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Glider TL Women’s #6","year":2009,"mpf":1028,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER 851HS Hybrid System #6","year":2010,"mpf":870,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha","year":2002,"mpf":1024,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Great Big Bertha 23 #6","year":2023,"mpf":869,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Glider S","year":2008,"mpf":1023,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"RDM Recoil (hollow)","year":2002,"mpf":869,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"KE-4 U30","year":2010,"mpf":1014,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha #6","year":2015,"mpf":867,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"KE-4","year":2006,"mpf":1014,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"DM Pro Steel 2 (Black Back) #6","year":2010,"mpf":867,"category":"Ultra Game Improvement"},{"brand":"Lynx","model":"Tigress #6","year":2005,"mpf":1012,"category":"Ultra Game Improvement"},{"brand":"Maxfli","model":"XC3 Forged #6","year":2025,"mpf":866,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha X-12","year":1998,"mpf":989,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Tour+ #6","year":2015,"mpf":866,"category":"Ultra Game Improvement"},{"brand":"Tommy Armour","model":"845u Silver Back","year":2003,"mpf":989,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"X Hot #6","year":2013,"mpf":866,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Logic Lady","year":2003,"mpf":986,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"KE4 Tour #6","year":2012,"mpf":866,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"M980 #6","year":2026,"mpf":985,"category":"Ultra Game Improvement"},{"brand":"Browning","model":"440 #6","year":1977,"mpf":866,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha Ladies #6","year":2006,"mpf":984,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King SZ One #6","year":2020,"mpf":865,"category":"Ultra Game Improvement"},{"brand":"Tommy Armour","model":"845w Silver Back (Women’s)","year":2003,"mpf":984,"category":"Ultra Game Improvement"},{"brand":"One Iron Golf","model":"1 Iron Pro-Line #6","year":2021,"mpf":864,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"M890 #6","year":2020,"mpf":982,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King SZ Women's #6","year":2020,"mpf":863,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"X-18 Pro Series #6","year":2004,"mpf":982,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"KE4-S","year":2014,"mpf":863,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Steelhead X-14","year":2002,"mpf":980,"category":"Ultra Game Improvement"},{"brand":"Ping","model":"IV","year":1980,"mpf":862,"category":"Ultra Game Improvement"},{"brand":"Toski","model":"Target T-56","year":2003,"mpf":979,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER","year":2008,"mpf":860,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"RDM Recoil #2","year":2006,"mpf":974,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"KE4 V Polymer Back","year":2008,"mpf":860,"category":"Ultra Game Improvement"},{"brand":"TaylorMade","model":"Stealth HD #6","year":2023,"mpf":972,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Cobra S9 #6","year":2008,"mpf":860,"category":"Ultra Game Improvement"},{"brand":"Tommy Armour","model":"855 #6","year":2006,"mpf":972,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"Vectrax","year":2000,"mpf":860,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"RAZR #6","year":2011,"mpf":970,"category":"Ultra Game Improvement"},{"brand":"Cleveland","model":"Halo XL Full Face #7","year":2025,"mpf":859,"category":"Ultra Game Improvement"},{"brand":"Cleveland","model":"Launcher #6","year":2005,"mpf":970,"category":"Ultra Game Improvement"},{"brand":"TaylorMade","model":"M2 #6","year":2017,"mpf":858,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"MHS #5","year":2007,"mpf":969,"category":"Ultra Game Improvement"},{"brand":"Ping","model":"Rhapsody","year":2008,"mpf":858,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Diablo Edge #6","year":2010,"mpf":968,"category":"Ultra Game Improvement"},{"brand":"Goldwin","model":"AVDP (Oversize)","year":2000,"mpf":858,"category":"Ultra Game Improvement"},{"brand":"Mizuno","model":"JPX 925 Hot Metal HL #6","year":2025,"mpf":857,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Steelhead XR #6","year":2017,"mpf":967,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"STi #6","year":2015,"mpf":857,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Pro Series X-16","year":2003,"mpf":966,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER VX OS #6","year":2011,"mpf":857,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha","year":2003,"mpf":964,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"X-24 Hot #6","year":2011,"mpf":857,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Logic Lady","year":2006,"mpf":964,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER 900 OS #6","year":2010,"mpf":857,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"KE4 Max #6","year":2022,"mpf":959,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha #6","year":2008,"mpf":857,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"RAZR Women’s #6","year":2011,"mpf":959,"category":"Ultra Game Improvement"},{"brand":"Wilson","model":"Reflex","year":1980,"mpf":857,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER 851 UM","year":2004,"mpf":956,"category":"Ultra Game Improvement"},{"brand":"TaylorMade","model":"Qi Max #6","year":2026,"mpf":856,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Logic Lady","year":2000,"mpf":956,"category":"Ultra Game Improvement"},{"brand":"Titleist","model":"T350 Forged #6","year":2025,"mpf":856,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"FT #6","year":2008,"mpf":949,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Oversize #6","year":2017,"mpf":855,"category":"Ultra Game Improvement"},{"brand":"Tommy Armour","model":"845 Vault","year":2003,"mpf":944,"category":"Ultra Game Improvement"},{"brand":"Adams","model":"Idea VST #6","year":2014,"mpf":855,"category":"Ultra Game Improvement"},{"brand":"Wilson","model":"Deep Red II #6","year":2004,"mpf":942,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER 900 #6","year":2010,"mpf":855,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Hybrid ST","year":2008,"mpf":941,"category":"Ultra Game Improvement"},{"brand":"Tommy Armour","model":"Royal Scot #6","year":2006,"mpf":855,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha Hybrid #4","year":2008,"mpf":938,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"Air X #6","year":2022,"mpf":854,"category":"Ultra Game Improvement"},{"brand":"Cleveland","model":"Quadpro #6","year":2002,"mpf":937,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"X-22 #6","year":2009,"mpf":854,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Max 3DP #6","year":2026,"mpf":936,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Cobra UFi","year":2008,"mpf":853,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"S9 #6","year":2006,"mpf":933,"category":"Ultra Game Improvement"},{"brand":"Cleveland","model":"TA6 #6","year":2001,"mpf":927,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER 701+","year":2002,"mpf":852,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha #6","year":2006,"mpf":926,"category":"Ultra Game Improvement"},{"brand":"Titleist","model":"T400 #6","year":2020,"mpf":851,"category":"Ultra Game Improvement"},{"brand":"TaylorMade","model":"M4 #6","year":2018,"mpf":925,"category":"Ultra Game Improvement"},{"brand":"Mizuno","model":"Tava Ladies #7","year":2006,"mpf":851,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha CF19 #6","year":2019,"mpf":924,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Glider T #6","year":2009,"mpf":921,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Steelhead XR Pro #6","year":2017,"mpf":916,"category":"Ultra Game Improvement"},{"brand":"Cleveland","model":"TA5 (Cast)","year":2000,"mpf":915,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"Xtreme X-1","year":2003,"mpf":913,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"TS3 DBM Black #6","year":2025,"mpf":850,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha B21 #6","year":2021,"mpf":912,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"TS3 Forged #6","year":2023,"mpf":849,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"RAZR X HL #6","year":2012,"mpf":911,"category":"Ultra Game Improvement"},{"brand":"Ben Hogan","model":"BH-5 #6","year":2004,"mpf":848,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha Hybrid #5","year":2008,"mpf":911,"category":"Ultra Game Improvement"},{"brand":"Mizuno","model":"JPX 923 Hot Metal HL #6","year":2023,"mpf":846,"category":"Ultra Game Improvement"},{"brand":"Ping","model":"G5L #6","year":2006,"mpf":909,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER 701U","year":2003,"mpf":846,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Big Bertha Ladies #6","year":2008,"mpf":906,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"Aerojet One #6","year":2023,"mpf":844,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Diablo Edge Women’s #6","year":2010,"mpf":905,"category":"Ultra Game Improvement"},{"brand":"Ping","model":"G15 #6","year":2010,"mpf":844,"category":"Ultra Game Improvement"},{"brand":"Ping","model":"Serene #6 Ladies","year":2013,"mpf":901,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"TE+ V4 Forged #6","year":2024,"mpf":838,"category":"Ultra Game Improvement"},{"brand":"Ping","model":"Rapture V2 #6","year":2009,"mpf":899,"category":"Ultra Game Improvement"},{"brand":"Tommy Armour","model":"845 Max #6","year":2021,"mpf":838,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"Kinetic CER","year":1989,"mpf":898,"category":"Ultra Game Improvement"},{"brand":"Titleist","model":"AP1 710 #6","year":2010,"mpf":838,"category":"Ultra Game Improvement"},{"brand":"Titleist","model":"T300 #6","year":2020,"mpf":895,"category":"Ultra Game Improvement"},{"brand":"TaylorMade","model":"Slim Max #6","year":2020,"mpf":834,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"CER E-Series","year":2005,"mpf":895,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Cobra SS-i Ladies’ #7","year":2004,"mpf":834,"category":"Ultra Game Improvement"},{"brand":"Srixon","model":"I-403 AD","year":2005,"mpf":895,"category":"Ultra Game Improvement"},{"brand":"Spalding","model":"XL-2000","year":2000,"mpf":834,"category":"Ultra Game Improvement"},{"brand":"Ping","model":"K15 Ti Face #6","year":2011,"mpf":894,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Rogue ST Max OS #6","year":2022,"mpf":833,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"851 HS Hybrid Series #5","year":2007,"mpf":894,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Radspeed One #6","year":2021,"mpf":833,"category":"Ultra Game Improvement"},{"brand":"GolfWorks","model":"DM Pro Steel Stainless #6","year":2007,"mpf":894,"category":"Ultra Game Improvement"},{"brand":"Cobra","model":"King Cobra Transitions S #6","year":2007,"mpf":833,"category":"Ultra Game Improvement"},{"brand":"Nickent","model":"6DX Tungsten #6","year":2011,"mpf":893,"category":"Ultra Game Improvement"},{"brand":"TaylorMade","model":"R7 XD #6","year":2006,"mpf":833,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"L-Tech LT #6","year":2015,"mpf":892,"category":"Ultra Game Improvement"},{"brand":"Ping","model":"G #6","year":2016,"mpf":832,"category":"Ultra Game Improvement"},{"brand":"Callaway","model":"Steelhead X-14 Pro","year":2002,"mpf":891,"category":"Ultra Game Improvement"},{"brand":"Cleveland","model":"Launcher HB Turbo #6","year":2021,"mpf":831,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"RDM Recoil","year":2006,"mpf":889,"category":"Ultra Game Improvement"},{"brand":"Maltby","model":"TE+ V4 Black Forged #6","year":2024,"mpf":830,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Elyte X #6","year":2025,"mpf":770,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King LTDx One Length #6","year":2022,"mpf":830,"category":"Super Game Improvement"},{"brand":"Cobra","model":"T-Rail #6","year":2020,"mpf":770,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King F9 One Length #6","year":2019,"mpf":830,"category":"Super Game Improvement"},{"brand":"Maltby","model":"MPC Forged","year":2008,"mpf":770,"category":"Super Game Improvement"},{"brand":"Maxfli","model":"XC2 Forged #6","year":2025,"mpf":828,"category":"Super Game Improvement"},{"brand":"Toski","model":"TourU T-58","year":2006,"mpf":770,"category":"Super Game Improvement"},{"brand":"Tommy Armour","model":"845 #6","year":2020,"mpf":828,"category":"Super Game Improvement"},{"brand":"Ping","model":"G440 #6","year":2025,"mpf":768,"category":"Super Game Improvement"},{"brand":"Maltby","model":"KE4 MP1 #6","year":2013,"mpf":827,"category":"Super Game Improvement"},{"brand":"Adams","model":"Idea A1 Pro Hybrid #6","year":2005,"mpf":768,"category":"Super Game Improvement"},{"brand":"Ping","model":"I","year":1975,"mpf":826,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"RAC OS 2 #6","year":2005,"mpf":768,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Viper Ti 4","year":2006,"mpf":825,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Ai Smoke HL #6","year":2024,"mpf":766,"category":"Super Game Improvement"},{"brand":"Tommy Armour","model":"845s Oversize Plus","year":2002,"mpf":825,"category":"Super Game Improvement"},{"brand":"Wilson","model":"Deep Red #6","year":2003,"mpf":766,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King SZ #6","year":2020,"mpf":824,"category":"Super Game Improvement"},{"brand":"Tommy Armour","model":"TA1","year":2018,"mpf":765,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"TA7 Tour Action #6","year":2002,"mpf":824,"category":"Super Game Improvement"},{"brand":"Titleist","model":"AP1 #6","year":2008,"mpf":765,"category":"Super Game Improvement"},{"brand":"Maxfli","model":"VHL USA","year":1994,"mpf":823,"category":"Super Game Improvement"},{"brand":"Cobra","model":"S2 Max #6","year":2010,"mpf":763,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Radspeed #6","year":2021,"mpf":822,"category":"Super Game Improvement"},{"brand":"Wilson","model":"Di 5 #6","year":2005,"mpf":763,"category":"Super Game Improvement"},{"brand":"Ping","model":"G25 #6","year":2013,"mpf":821,"category":"Super Game Improvement"},{"brand":"Srixon","model":"ZXi4 Forged #6","year":2025,"mpf":762,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX FLI HI Hybrid #6","year":2012,"mpf":821,"category":"Super Game Improvement"},{"brand":"Precept","model":"EV","year":2001,"mpf":761,"category":"Super Game Improvement"},{"brand":"Ben Hogan","model":"BH-5","year":2004,"mpf":821,"category":"Super Game Improvement"},{"brand":"Maltby","model":"KE4 Max-F #6","year":2025,"mpf":759,"category":"Super Game Improvement"},{"brand":"Ping","model":"EYE","year":1981,"mpf":821,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Tricept TU Forged #6","year":2011,"mpf":759,"category":"Super Game Improvement"},{"brand":"Tommy Armour","model":"845 Stripe","year":2002,"mpf":821,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King F7 Tecflo #6","year":2017,"mpf":758,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Quantum Max OS #6","year":2026,"mpf":820,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Logic HTD M-07 (forged)","year":2004,"mpf":757,"category":"Super Game Improvement"},{"brand":"Titleist","model":"T350 Forged #6","year":2024,"mpf":820,"category":"Super Game Improvement"},{"brand":"Ping","model":"G740 #6","year":2026,"mpf":756,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"RSi #6","year":2015,"mpf":818,"category":"Super Game Improvement"},{"brand":"Cobra","model":"Dark Speed One Length #6","year":2024,"mpf":755,"category":"Super Game Improvement"},{"brand":"GolfWorks","model":"DM Pro Launch +","year":2003,"mpf":818,"category":"Super Game Improvement"},{"brand":"Maltby","model":"TS4 Forged #6","year":2023,"mpf":755,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Ai Smoke MAX Fast #6","year":2024,"mpf":817,"category":"Super Game Improvement"},{"brand":"Nike","model":"SQ Machspeed #6","year":2010,"mpf":755,"category":"Super Game Improvement"},{"brand":"Cobra","model":"Baffler #6","year":2013,"mpf":817,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX 919 Hot Metal #6","year":2019,"mpf":754,"category":"Super Game Improvement"},{"brand":"Ping","model":"G2 HL","year":2004,"mpf":817,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Cobra #6 Transition S Hybrid","year":2009,"mpf":754,"category":"Super Game Improvement"},{"brand":"Maltby","model":"TS3.5 Forged #6","year":2025,"mpf":816,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King 3DP #6","year":2026,"mpf":753,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Rogue ST Max #6","year":2022,"mpf":816,"category":"Super Game Improvement"},{"brand":"Maltby","model":"TS4 DBM Black #6","year":2025,"mpf":753,"category":"Super Game Improvement"},{"brand":"Ping","model":"G20 #6","year":2012,"mpf":816,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX EZ #6","year":2014,"mpf":753,"category":"Super Game Improvement"},{"brand":"Cobra","model":"Adapt DS Max #6","year":2025,"mpf":815,"category":"Super Game Improvement"},{"brand":"Maltby","model":"KE4 SS1 #5","year":2010,"mpf":752,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"SIM2 Max #6","year":2021,"mpf":814,"category":"Super Game Improvement"},{"brand":"Lynx","model":"Black Cat Ti Launch #6","year":2005,"mpf":752,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Sti OS #6","year":2017,"mpf":814,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"Launcher #6","year":2010,"mpf":751,"category":"Super Game Improvement"},{"brand":"Titleist","model":"AP1 718 #6","year":2018,"mpf":813,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Mavrik Max #6","year":2020,"mpf":750,"category":"Super Game Improvement"},{"brand":"Cobra","model":"3400 I/XH Ladies’ #7","year":2004,"mpf":812,"category":"Super Game Improvement"},{"brand":"Ping","model":"Faithe Women’s #6","year":2011,"mpf":750,"category":"Super Game Improvement"},{"brand":"GolfWorks","model":"CER 3C","year":2004,"mpf":811,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"200","year":2000,"mpf":750,"category":"Super Game Improvement"},{"brand":"Ping","model":"G710 #6","year":2020,"mpf":749,"category":"Super Game Improvement"},{"brand":"Wilson","model":"Deep Red #6 (graphite shaft)","year":2003,"mpf":810,"category":"Super Game Improvement"},{"brand":"Ping","model":"Karsten #6","year":2014,"mpf":749,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Logic Tungsten","year":2000,"mpf":809,"category":"Super Game Improvement"},{"brand":"XXIO","model":"X-Series #6","year":2019,"mpf":748,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Elyte HL #6","year":2025,"mpf":808,"category":"Super Game Improvement"},{"brand":"Cobra","model":"CX1","year":2001,"mpf":748,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"M6 #6","year":2019,"mpf":806,"category":"Super Game Improvement"},{"brand":"Tommy Armour","model":"845c Silver Back (forged cavity)","year":2003,"mpf":747,"category":"Super Game Improvement"},{"brand":"Ping","model":"G5 #6","year":2006,"mpf":806,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX 921 Hot Metal #6","year":2021,"mpf":746,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"Supersteel Burner","year":2000,"mpf":806,"category":"Super Game Improvement"},{"brand":"Cobra","model":"F-Max #6","year":2018,"mpf":746,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX 923 Hot Metal #6","year":2023,"mpf":805,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Python","year":2004,"mpf":746,"category":"Super Game Improvement"},{"brand":"Ping","model":"G-10","year":2008,"mpf":805,"category":"Super Game Improvement"},{"brand":"Maltby","model":"MCC Forged #5","year":2007,"mpf":746,"category":"Super Game Improvement"},{"brand":"Ping","model":"ISI","year":1996,"mpf":805,"category":"Super Game Improvement"},{"brand":"Toski","model":"Target T-55","year":2003,"mpf":746,"category":"Super Game Improvement"},{"brand":"Cobra","model":"F-Max One Length #6","year":2018,"mpf":804,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Big Bertha Senior #6","year":2017,"mpf":745,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"Black #6","year":2012,"mpf":803,"category":"Super Game Improvement"},{"brand":"Ping","model":"GLE4 #6","year":2026,"mpf":744,"category":"Super Game Improvement"},{"brand":"Wilson","model":"Fat Shaft #6","year":2003,"mpf":803,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"Qi HL #6","year":2024,"mpf":744,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Elyte Max Fast #6","year":2025,"mpf":743,"category":"Super Game Improvement"},{"brand":"Toski","model":"T-58 #5","year":2006,"mpf":801,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Quantum Max Fast #6","year":2026,"mpf":741,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"Hi Bore","year":2007,"mpf":800,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Logic Tech Tungsten","year":2004,"mpf":741,"category":"Super Game Improvement"},{"brand":"Maltby","model":"PTM Chrome #6","year":2018,"mpf":799,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Rogue ST Pro #6","year":2022,"mpf":740,"category":"Super Game Improvement"},{"brand":"Adams","model":"XTD #6","year":2014,"mpf":799,"category":"Super Game Improvement"},{"brand":"Ping","model":"ISI K","year":1996,"mpf":740,"category":"Super Game Improvement"},{"brand":"Ping","model":"Ping Zing","year":1992,"mpf":799,"category":"Super Game Improvement"},{"brand":"PXG","model":"0311XF #6","year":2017,"mpf":739,"category":"Super Game Improvement"},{"brand":"Maltby","model":"PTM DBM #6","year":2018,"mpf":798,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"CG7 Zip Grooves #6","year":2010,"mpf":739,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Cobra SS-i","year":2004,"mpf":798,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"Hi Bore XLi Hybrid #6","year":2009,"mpf":739,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"Qi Max HL #6","year":2026,"mpf":797,"category":"Super Game Improvement"},{"brand":"Ping","model":"G410 #6","year":2019,"mpf":738,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX 925 Hot Metal #6","year":2025,"mpf":797,"category":"Super Game Improvement"},{"brand":"Adams","model":"A2 Hybrid #6","year":2006,"mpf":738,"category":"Super Game Improvement"},{"brand":"Maxfli","model":"XC1 Forged #6","year":2026,"mpf":794,"category":"Super Game Improvement"},{"brand":"Titleist","model":"716 AP1 #6","year":2016,"mpf":737,"category":"Super Game Improvement"},{"brand":"Tommy Armour","model":"Atomic #6","year":2019,"mpf":794,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"RBLADEZ MAX #6","year":2013,"mpf":737,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"Firesole Tungsten","year":1999,"mpf":794,"category":"Super Game Improvement"},{"brand":"Ping","model":"G700 #6","year":2018,"mpf":736,"category":"Super Game Improvement"},{"brand":"Maltby","model":"STi-HS #6","year":2016,"mpf":792,"category":"Super Game Improvement"},{"brand":"Callaway","model":"RAZR XF Forged #6","year":2012,"mpf":735,"category":"Super Game Improvement"},{"brand":"Maxfli","model":"CrossBax","year":2008,"mpf":790,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"Mashie Gliderail #6","year":2012,"mpf":733,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"Launcher HB #6","year":2019,"mpf":789,"category":"Super Game Improvement"},{"brand":"Ping","model":"G430 #6","year":2023,"mpf":731,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Cobra SZ #6","year":2009,"mpf":789,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Elyte #6","year":2025,"mpf":730,"category":"Super Game Improvement"},{"brand":"Ben Hogan","model":"B-H offset #6","year":2004,"mpf":789,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"SIM2 Max OS #6","year":2021,"mpf":730,"category":"Super Game Improvement"},{"brand":"Ping","model":"G400 #6","year":2017,"mpf":788,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"CGB #6","year":2018,"mpf":730,"category":"Super Game Improvement"},{"brand":"Maltby","model":"TE Forged","year":2010,"mpf":788,"category":"Super Game Improvement"},{"brand":"Wilson","model":"Fat Shaft Staff","year":1997,"mpf":729,"category":"Super Game Improvement"},{"brand":"Maltby","model":"MTF Forged","year":2007,"mpf":788,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Quantum Max #6","year":2026,"mpf":728,"category":"Super Game Improvement"},{"brand":"Maltby","model":"DBM Forged #6","year":2013,"mpf":787,"category":"Super Game Improvement"},{"brand":"Browning","model":"440 G","year":1996,"mpf":728,"category":"Super Game Improvement"},{"brand":"Srixon","model":"ZXir HL #6","year":2026,"mpf":786,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"MX-11 #6","year":2002,"mpf":728,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"M2 #6","year":2016,"mpf":786,"category":"Super Game Improvement"},{"brand":"Maltby","model":"TS1-IM Forged #6","year":2023,"mpf":728,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King LTDx #6","year":2022,"mpf":785,"category":"Super Game Improvement"},{"brand":"Maltby","model":"TS2 #6","year":2018,"mpf":727,"category":"Super Game Improvement"},{"brand":"Ping","model":"Ping Zing2","year":1994,"mpf":785,"category":"Super Game Improvement"},{"brand":"Tommy Armour","model":"845cs Silver Back (cast ss)","year":2003,"mpf":727,"category":"Super Game Improvement"},{"brand":"Tommy Armour","model":"845fs Silver Scot","year":2002,"mpf":784,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX 850 #6","year":2015,"mpf":726,"category":"Super Game Improvement"},{"brand":"GolfWorks","model":"Rim Fire Performance +","year":2001,"mpf":783,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Logic Tradition M-06 (stainless)","year":2004,"mpf":725,"category":"Super Game Improvement"},{"brand":"Ping","model":"II","year":1977,"mpf":783,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Tec-X Forged One Length #6","year":2025,"mpf":724,"category":"Super Game Improvement"},{"brand":"Titleist","model":"AP1 714 #6","year":2014,"mpf":781,"category":"Super Game Improvement"},{"brand":"Ping","model":"Eye 2","year":1983,"mpf":724,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Viper #5","year":2007,"mpf":781,"category":"Super Game Improvement"},{"brand":"Nike","model":"Slingshot HL #6","year":2009,"mpf":723,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Cobra 3400 I/XH","year":2004,"mpf":780,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"SORA High Launch Design","year":2008,"mpf":723,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"MZX","year":1989,"mpf":780,"category":"Super Game Improvement"},{"brand":"Maltby","model":"MMB Forged","year":2007,"mpf":722,"category":"Super Game Improvement"},{"brand":"Titleist","model":"AP1-712 #6","year":2012,"mpf":779,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Big Bertha OS #6","year":2017,"mpf":720,"category":"Super Game Improvement"},{"brand":"Cobra","model":"Aerojet #6","year":2023,"mpf":778,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"EL-1","year":1982,"mpf":720,"category":"Super Game Improvement"},{"brand":"Ping","model":"S58 #6","year":2006,"mpf":778,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Rogue ST Max OS Lite #6","year":2022,"mpf":719,"category":"Super Game Improvement"},{"brand":"Ping","model":"G2 #6","year":2004,"mpf":778,"category":"Super Game Improvement"},{"brand":"Boccieri","model":"H-11 Control Series Heavy Iron #6","year":2011,"mpf":719,"category":"Super Game Improvement"},{"brand":"PXG","model":"Gen 6 0311XP #6","year":2023,"mpf":777,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"CG7 Dynamic-MCT #6","year":2010,"mpf":719,"category":"Super Game Improvement"},{"brand":"Liquidmetal","model":"Pure Energy","year":1999,"mpf":777,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"XPC Lady","year":2004,"mpf":719,"category":"Super Game Improvement"},{"brand":"Ping","model":"G2","year":2004,"mpf":777,"category":"Super Game Improvement"},{"brand":"One Iron Golf","model":"1 Iron #6","year":2021,"mpf":717,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"Launcher Max #7","year":2025,"mpf":776,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Spalding Legacy","year":2002,"mpf":717,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"M3 #6","year":2018,"mpf":776,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Tricept Cavity C2 #6","year":2009,"mpf":716,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King F7 One #6","year":2017,"mpf":776,"category":"Super Game Improvement"},{"brand":"Callaway","model":"X-20 Tour #6","year":2007,"mpf":716,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"M1 #6","year":2017,"mpf":776,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Logic Tradition M-05","year":2003,"mpf":716,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"SpeedBlade #6","year":2014,"mpf":775,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King F8 One Length #6","year":2018,"mpf":715,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King F-Max #6","year":2021,"mpf":774,"category":"Super Game Improvement"},{"brand":"Cobra","model":"Bio Cell TSW #6","year":2014,"mpf":715,"category":"Super Game Improvement"},{"brand":"Maltby","model":"STi2 2nd Gen #6","year":2025,"mpf":772,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"MX-19 #6","year":2006,"mpf":715,"category":"Super Game Improvement"},{"brand":"Maltby","model":"STi2 #6","year":2020,"mpf":772,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"RBLADEZ #6","year":2013,"mpf":714,"category":"Super Game Improvement"},{"brand":"Maltby","model":"MMB-17 Forged #6","year":2013,"mpf":714,"category":"Super Game Improvement"},{"brand":"Srixon","model":"ZXiR #6","year":2026,"mpf":771,"category":"Super Game Improvement"},{"brand":"Maltby","model":"MMB (tungsten toe weight) Forged #6","year":2011,"mpf":714,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX 925 Hot Metal Pro #6","year":2025,"mpf":713,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Cobra #5 Transition S Hybrid","year":2009,"mpf":661,"category":"Game Improvement"},{"brand":"Cobra","model":"Dark Speed #6","year":2024,"mpf":713,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"Oversize Burner","year":1996,"mpf":661,"category":"Game Improvement"},{"brand":"Cobra","model":"S3 E9 Face Technology #6","year":2011,"mpf":713,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX Hot Metal Pro #6","year":2019,"mpf":660,"category":"Game Improvement"},{"brand":"Maltby","model":"TS1 #6","year":2019,"mpf":711,"category":"Super Game Improvement"},{"brand":"Callaway","model":"XR #6","year":2015,"mpf":660,"category":"Game Improvement"},{"brand":"Cleveland","model":"XLi Hi-Bore Hybrid Women’s #6","year":2009,"mpf":710,"category":"Super Game Improvement"},{"brand":"Ping","model":"S59","year":2004,"mpf":660,"category":"Game Improvement"},{"brand":"Cobra","model":"Bio Cell+ TSW #6","year":2014,"mpf":709,"category":"Super Game Improvement"},{"brand":"Titleist","model":"DCI 981 SL","year":2000,"mpf":660,"category":"Game Improvement"},{"brand":"GolfWorks","model":"DM Pro Launch","year":2002,"mpf":708,"category":"Super Game Improvement"},{"brand":"GolfWorks","model":"CER 551+","year":2002,"mpf":659,"category":"Game Improvement"},{"brand":"Maltby","model":"Logic Tradition M-03 (forged)","year":2002,"mpf":708,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Sterling Tungsten","year":2000,"mpf":658,"category":"Game Improvement"},{"brand":"Maltby","model":"MCC Forged","year":2007,"mpf":707,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Paradym #6","year":2023,"mpf":656,"category":"Game Improvement"},{"brand":"Cleveland","model":"CG4 #6","year":2005,"mpf":707,"category":"Super Game Improvement"},{"brand":"Ping","model":"i5 #6","year":2006,"mpf":707,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes FC-01","year":2002,"mpf":652,"category":"Game Improvement"},{"brand":"Cleveland","model":"CBX #6","year":2019,"mpf":706,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"Slim Max OS #6","year":2020,"mpf":651,"category":"Game Improvement"},{"brand":"Tour Edge","model":"Bazooka HT Max #6","year":2010,"mpf":706,"category":"Super Game Improvement"},{"brand":"Maltby","model":"KE4 Forged #6","year":2012,"mpf":705,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Cobra FP Ladies #7","year":2006,"mpf":651,"category":"Game Improvement"},{"brand":"Tour Edge","model":"Exotics XCG3 #6","year":2010,"mpf":705,"category":"Super Game Improvement"},{"brand":"Adams","model":"IDEA Pro Forged #6","year":2006,"mpf":651,"category":"Game Improvement"},{"brand":"Cleveland","model":"CG Gold MCT","year":2008,"mpf":705,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"TGI.560","year":2002,"mpf":651,"category":"Game Improvement"},{"brand":"Cobra","model":"King Cobra SS-i #6 (senior)","year":2004,"mpf":705,"category":"Super Game Improvement"},{"brand":"PXG","model":"0311 XP Gen 7 SX Forged #6","year":2025,"mpf":650,"category":"Game Improvement"},{"brand":"TaylorMade","model":"Stealth #6","year":2022,"mpf":703,"category":"Super Game Improvement"},{"brand":"Yonex","model":"EZOne SD #6","year":2014,"mpf":650,"category":"Game Improvement"},{"brand":"Wishon","model":"770 CFE","year":2005,"mpf":703,"category":"Super Game Improvement"},{"brand":"Tommy Armour","model":"845m Silver Back","year":2003,"mpf":650,"category":"Game Improvement"},{"brand":"GolfWorks","model":"Dm Pro Balance","year":2003,"mpf":702,"category":"Super Game Improvement"},{"brand":"Titleist","model":"735 CM #6","year":2005,"mpf":648,"category":"Game Improvement"},{"brand":"Maltby","model":"M-45 #6","year":2005,"mpf":702,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"RAC LT #6","year":2003,"mpf":647,"category":"Game Improvement"},{"brand":"TaylorMade","model":"RAC CGB #6","year":2005,"mpf":647,"category":"Game Improvement"},{"brand":"Cobra","model":"FP #6","year":2006,"mpf":646,"category":"Super Game Improvement"},{"brand":"Wilson","model":"Fat Shaft FS #6","year":2001,"mpf":646,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"P770 Forged #6","year":2025,"mpf":645,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Tour Cavity","year":2005,"mpf":645,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes 600xc forged","year":2005,"mpf":645,"category":"Super Game Improvement"},{"brand":"Cobra","model":"Amp Cell #6","year":2013,"mpf":700,"category":"Super Game Improvement"},{"brand":"Cobra","model":"AMP #6","year":2012,"mpf":643,"category":"Game Improvement"},{"brand":"Cobra","model":"King F8 #6","year":2018,"mpf":699,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"P790 #6","year":2021,"mpf":642,"category":"Game Improvement"},{"brand":"Cobra","model":"Fly Z XL #6","year":2015,"mpf":699,"category":"Super Game Improvement"},{"brand":"Adams","model":"Tight Lies","year":2000,"mpf":642,"category":"Game Improvement"},{"brand":"Callaway","model":"RAZR Tour #6","year":2011,"mpf":699,"category":"Super Game Improvement"},{"brand":"Nike","model":"NDS #6","year":2005,"mpf":642,"category":"Game Improvement"},{"brand":"TaylorMade","model":"P790 #6","year":2024,"mpf":697,"category":"Super Game Improvement"},{"brand":"Titleist","model":"T150 Forged #6","year":2025,"mpf":641,"category":"Game Improvement"},{"brand":"Maxfli","model":"Australian","year":2000,"mpf":1997,"category":"Super Game Improvement"},{"brand":"Spalding","model":"Tour Edition","year":1985,"mpf":697,"category":"Super Game Improvement"},{"brand":"Maxfli","model":"Revolution (multi-layer)","year":1998,"mpf":641,"category":"Game Improvement"},{"brand":"Mizuno","model":"JPX Hot Metal Pro #6","year":2023,"mpf":696,"category":"Super Game Improvement"},{"brand":"Srixon","model":"ZX4 #6","year":2021,"mpf":696,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Cobra 3100 I/H","year":2004,"mpf":639,"category":"Game Improvement"},{"brand":"Yonex","model":"V-Mass 350","year":2002,"mpf":696,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"400CM Deep CG","year":2002,"mpf":639,"category":"Game Improvement"},{"brand":"Titleist","model":"T250* Launch Forged #6","year":2025,"mpf":693,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"HMX Twin Tune","year":2005,"mpf":639,"category":"Game Improvement"},{"brand":"Wilson","model":"Pi 5 #6","year":2005,"mpf":693,"category":"Super Game Improvement"},{"brand":"Titleist","model":"695 CB #6","year":2006,"mpf":638,"category":"Game Improvement"},{"brand":"Cleveland","model":"Launcher UHX #6","year":2021,"mpf":692,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX 923 Forged #6","year":2023,"mpf":637,"category":"Game Improvement"},{"brand":"PXG","model":"0311 XP #6","year":2020,"mpf":692,"category":"Super Game Improvement"},{"brand":"Callaway","model":"X-Forged #6","year":2007,"mpf":636,"category":"Game Improvement"},{"brand":"Tour Edge","model":"Bazooka Max MOI Geomax 2 #6","year":2010,"mpf":691,"category":"Super Game Improvement"},{"brand":"Adams","model":"A2 OS Hybrid #7","year":2006,"mpf":636,"category":"Game Improvement"},{"brand":"Titleist","model":"T250 Forged #6","year":2025,"mpf":690,"category":"Super Game Improvement"},{"brand":"Maltby","model":"HP Forged","year":2000,"mpf":636,"category":"Game Improvement"},{"brand":"Titleist","model":"T200 #6","year":2020,"mpf":690,"category":"Super Game Improvement"},{"brand":"PXG","model":"Black Ops #6","year":2025,"mpf":635,"category":"Game Improvement"},{"brand":"Ping","model":"i15 #6","year":2010,"mpf":689,"category":"Super Game Improvement"},{"brand":"One Iron Golf","model":"1 Iron Blackstone 31°","year":2021,"mpf":635,"category":"Game Improvement"},{"brand":"Tommy Armour","model":"835 Hot Scot","year":2002,"mpf":689,"category":"Super Game Improvement"},{"brand":"Yonex","model":"VXF #6","year":2014,"mpf":635,"category":"Game Improvement"},{"brand":"Maxfli","model":"VHL (midsize)","year":1995,"mpf":688,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Tricept F2 Forged #6","year":2010,"mpf":635,"category":"Game Improvement"},{"brand":"TaylorMade","model":"M5 #6","year":2019,"mpf":687,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Tricept F1 Forged #6","year":2009,"mpf":635,"category":"Game Improvement"},{"brand":"PXG","model":"Gen 5 0311 XP #6","year":2022,"mpf":686,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"HB3 #6","year":2010,"mpf":634,"category":"Game Improvement"},{"brand":"Mizuno","model":"JPX 900 Hot Metal #6","year":2017,"mpf":685,"category":"Super Game Improvement"},{"brand":"Adams","model":"Idea a1 hybrid #6","year":2005,"mpf":634,"category":"Game Improvement"},{"brand":"Cobra","model":"3100 I/H Ladies’ #7","year":2004,"mpf":685,"category":"Super Game Improvement"},{"brand":"Cobra","model":"Fly Z #6","year":2015,"mpf":633,"category":"Game Improvement"},{"brand":"TaylorMade","model":"M2 Tour #6","year":2016,"mpf":683,"category":"Super Game Improvement"},{"brand":"PXG","model":"0311P 8th Gen","year":2026,"mpf":632,"category":"Game Improvement"},{"brand":"Cobra","model":"Fly Z XL Forged #6","year":2015,"mpf":683,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"R7 #6","year":2006,"mpf":632,"category":"Game Improvement"},{"brand":"Cobra","model":"Amp Cell #6 Ladies","year":2013,"mpf":683,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Tri Matrix","year":2004,"mpf":632,"category":"Game Improvement"},{"brand":"Bridgestone","model":"J-40 Forged #6 Straight Cavity","year":2012,"mpf":682,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Epic E19 Forged #6","year":2020,"mpf":631,"category":"Game Improvement"},{"brand":"Precept","model":"EC 603 tungsten #6","year":2004,"mpf":681,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Viper Tour","year":2005,"mpf":631,"category":"Game Improvement"},{"brand":"Cobra","model":"Amp #6 Ladies","year":2013,"mpf":680,"category":"Super Game Improvement"},{"brand":"Nicklaus","model":"Airmax (low profile)","year":1999,"mpf":630,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Viper LS","year":2000,"mpf":679,"category":"Super Game Improvement"},{"brand":"Ping","model":"i3 +","year":2003,"mpf":630,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snakes Eyes Viper Ladies’ #5","year":2007,"mpf":678,"category":"Super Game Improvement"},{"brand":"Ping","model":"Anser Forged #6","year":2011,"mpf":629,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Harvey Penick Fire Steel","year":2003,"mpf":678,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes MC-01","year":2000,"mpf":629,"category":"Game Improvement"},{"brand":"Ram","model":"Accubar Dual Cavity","year":1993,"mpf":629,"category":"Game Improvement"},{"brand":"Callaway","model":"Mavrik #6","year":2020,"mpf":677,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Cobra Forged CB #6","year":2004,"mpf":628,"category":"Game Improvement"},{"brand":"Cobra","model":"S2 #6","year":2010,"mpf":677,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Logic Tradition M-04 (forged)","year":2002,"mpf":628,"category":"Game Improvement"},{"brand":"TaylorMade","model":"RAC OS","year":2003,"mpf":677,"category":"Super Game Improvement"},{"brand":"Maltby","model":"Peak Velocity","year":2003,"mpf":628,"category":"Game Improvement"},{"brand":"Tommy Armour","model":"845s Silver Scot (original)","year":1988,"mpf":677,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"Burner 2.0 Women’s #6","year":2011,"mpf":627,"category":"Game Improvement"},{"brand":"Mizuno","model":"MX Speed Metal #6","year":2026,"mpf":676,"category":"Super Game Improvement"},{"brand":"MacGregor","model":"V-FOIL 1025cm (forged)","year":2003,"mpf":627,"category":"Game Improvement"},{"brand":"TaylorMade","model":"P790 Forged #6","year":2025,"mpf":676,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Tec-X Forged #6","year":2025,"mpf":626,"category":"Game Improvement"},{"brand":"Orlimar","model":"SS Scoring Iron","year":2000,"mpf":676,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Cobra FP #6","year":2008,"mpf":626,"category":"Game Improvement"},{"brand":"Nike","model":"VRS Covert #6","year":2014,"mpf":675,"category":"Super Game Improvement"},{"brand":"Wishon","model":"Tamarron Grand Monarch","year":2003,"mpf":626,"category":"Game Improvement"},{"brand":"Titleist","model":"T100 Forged #6","year":2025,"mpf":625,"category":"Game Improvement"},{"brand":"Callaway","model":"Paradym X #6","year":2023,"mpf":672,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX 825 #6","year":2013,"mpf":625,"category":"Game Improvement"},{"brand":"Cleveland","model":"CG-16 Laser Milled #6","year":2011,"mpf":672,"category":"Super Game Improvement"},{"brand":"Lynx","model":"Black Cat #5","year":2008,"mpf":624,"category":"Game Improvement"},{"brand":"Tommy Armour","model":"Atomic Max #6","year":2019,"mpf":670,"category":"Super Game Improvement"},{"brand":"Golfsmith","model":"XPC seven","year":2006,"mpf":624,"category":"Game Improvement"},{"brand":"MacGregor","model":"M565 #6","year":2005,"mpf":670,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"MX100 #6","year":2009,"mpf":623,"category":"Game Improvement"},{"brand":"Callaway","model":"Rogue X #6","year":2018,"mpf":669,"category":"Super Game Improvement"},{"brand":"PXG","model":"Gen 6 0311 P #6","year":2023,"mpf":622,"category":"Game Improvement"},{"brand":"Nike","model":"Sling Shot OSS #6","year":2006,"mpf":669,"category":"Super Game Improvement"},{"brand":"Callaway","model":"X Hot Pro #6","year":2013,"mpf":622,"category":"Game Improvement"},{"brand":"Founders Club","model":"Fresh Metal #6","year":2004,"mpf":668,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"MX100 Hybrid #5","year":2009,"mpf":622,"category":"Game Improvement"},{"brand":"TaylorMade","model":"RAC LT 2 #6","year":2005,"mpf":667,"category":"Super Game Improvement"},{"brand":"Titleist","model":"DTR #6","year":1988,"mpf":622,"category":"Game Improvement"},{"brand":"Callaway","model":"X Forged #6","year":2009,"mpf":621,"category":"Game Improvement"},{"brand":"Toski","model":"T-54 Forged","year":2003,"mpf":666,"category":"Super Game Improvement"},{"brand":"Cobra","model":"King Tour w/MIM Technology #6","year":2021,"mpf":619,"category":"Game Improvement"},{"brand":"Cobra","model":"King F6 #6","year":2016,"mpf":665,"category":"Super Game Improvement"},{"brand":"Mizuno","model":"JPX 919 Forged #6","year":2019,"mpf":619,"category":"Game Improvement"},{"brand":"Maxfli","model":"VT #6","year":2010,"mpf":665,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"588 MT Face Forged #6","year":2013,"mpf":619,"category":"Game Improvement"},{"brand":"Makser","model":"AS-4","year":2005,"mpf":665,"category":"Super Game Improvement"},{"brand":"Wilson","model":"Fi 5 #6","year":2005,"mpf":617,"category":"Game Improvement"},{"brand":"PXG","model":"Gen 5 0311 P #6","year":2022,"mpf":664,"category":"Super Game Improvement"},{"brand":"Adams","model":"Tight Lies #6","year":2004,"mpf":617,"category":"Game Improvement"},{"brand":"Wilson","model":"Defy #6","year":2016,"mpf":664,"category":"Super Game Improvement"},{"brand":"TaylorMade","model":"RBLADEZ Tour #6","year":2013,"mpf":616,"category":"Game Improvement"},{"brand":"Cobra","model":"King Cobra SS (oversize)","year":2001,"mpf":664,"category":"Super Game Improvement"},{"brand":"Maxfli","model":"C3 Forged #6","year":2010,"mpf":615,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes FMC-1","year":2003,"mpf":664,"category":"Super Game Improvement"},{"brand":"Callaway","model":"Apex DCB 21 #6","year":2021,"mpf":614,"category":"Game Improvement"},{"brand":"Mizuno","model":"MX-17 #6","year":2005,"mpf":664,"category":"Super Game Improvement"},{"brand":"Titleist","model":"804 OS (forged stainless)","year":2004,"mpf":614,"category":"Game Improvement"},{"brand":"Wilson","model":"1200 GE","year":1986,"mpf":614,"category":"Game Improvement"},{"brand":"TaylorMade","model":"LCG Burner","year":1998,"mpf":664,"category":"Super Game Improvement"},{"brand":"Cleveland","model":"588 TT Face Forged #6","year":2013,"mpf":613,"category":"Game Improvement"},{"brand":"Nike","model":"Vr-Pro Cavity #6","year":2011,"mpf":663,"category":"Super Game Improvement"},{"brand":"Titleist","model":"AP3 718 #6","year":2018,"mpf":662,"category":"Super Game Improvement"},{"brand":"Wishon","model":"555C Forged #6","year":2010,"mpf":612,"category":"Game Improvement"},{"brand":"Tommy Armour","model":"855s Silver Scot","year":1995,"mpf":662,"category":"Super Game Improvement"},{"brand":"Ping","model":"S57 #6","year":2009,"mpf":612,"category":"Game Improvement"},{"brand":"Wishon","model":"550C (forged)","year":2003,"mpf":662,"category":"Super Game Improvement"},{"brand":"Nike","model":"Sling Shot Tour #6","year":2006,"mpf":612,"category":"Game Improvement"},{"brand":"Titleist","model":"DCI 981","year":1999,"mpf":562,"category":"Game Improvement"},{"brand":"Cleveland","model":"CG4 Tour #6","year":2006,"mpf":611,"category":"Game Improvement"},{"brand":"Callaway","model":"Epic #6","year":2017,"mpf":561,"category":"Game Improvement"},{"brand":"TaylorMade","model":"P790 #6","year":2020,"mpf":607,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Python Plus #6","year":2006,"mpf":561,"category":"Game Improvement"},{"brand":"Nike","model":"Slingshot #6","year":2004,"mpf":561,"category":"Game Improvement"},{"brand":"TaylorMade","model":"Burner 2.0 #6","year":2011,"mpf":607,"category":"Game Improvement"},{"brand":"Srixon","model":"ZX5 #6","year":2021,"mpf":560,"category":"Game Improvement"},{"brand":"TaylorMade","model":"320","year":2001,"mpf":607,"category":"Game Improvement"},{"brand":"Nike","model":"SlingShot 40 (SS40)","year":2008,"mpf":560,"category":"Game Improvement"},{"brand":"PXG","model":"0311 #6","year":2016,"mpf":606,"category":"Game Improvement"},{"brand":"Ping","model":"i-10","year":2008,"mpf":560,"category":"Game Improvement"},{"brand":"Ping","model":"G435 #6","year":2021,"mpf":605,"category":"Game Improvement"},{"brand":"Ben Hogan","model":"Apex Forged #6","year":2005,"mpf":560,"category":"Game Improvement"},{"brand":"Callaway","model":"Xros #6","year":2016,"mpf":605,"category":"Game Improvement"},{"brand":"Srixon","model":"Z335 #6","year":2016,"mpf":559,"category":"Game Improvement"},{"brand":"Callaway","model":"RAZR Forged #6","year":2011,"mpf":605,"category":"Game Improvement"},{"brand":"Cleveland","model":"HB Hybrid Women’s #6","year":2011,"mpf":559,"category":"Game Improvement"},{"brand":"Maxfli","model":"Revolution (midsize)","year":2000,"mpf":605,"category":"Game Improvement"},{"brand":"Wishon","model":"991 C","year":2005,"mpf":559,"category":"Game Improvement"},{"brand":"Mizuno","model":"TZOID MX15 #6","year":2003,"mpf":605,"category":"Game Improvement"},{"brand":"Callaway","model":"Apex Ti Fusion Forged #6","year":2025,"mpf":558,"category":"Game Improvement"},{"brand":"Mizuno","model":"JPX 921 Hot Metal Pro #6","year":2021,"mpf":604,"category":"Game Improvement"},{"brand":"Cobra","model":"King Forged #6","year":2011,"mpf":557,"category":"Game Improvement"},{"brand":"Mizuno","model":"JPX 800 #6","year":2011,"mpf":604,"category":"Game Improvement"},{"brand":"Cobra","model":"S2 Forged Tour #6","year":2017,"mpf":557,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Viper MS","year":2003,"mpf":604,"category":"Game Improvement"},{"brand":"TaylorMade","model":"Burner XD","year":2008,"mpf":557,"category":"Game Improvement"},{"brand":"MacGregor","model":"MT Mid #6","year":2008,"mpf":603,"category":"Game Improvement"},{"brand":"MacGregor","model":"MACTEC NVG2 #6","year":2006,"mpf":603,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Spalding Elegance","year":2002,"mpf":557,"category":"Game Improvement"},{"brand":"Nike","model":"Ignite #5","year":2006,"mpf":602,"category":"Game Improvement"},{"brand":"Tommy Armour","model":"845s Titanium (Ti face)","year":1998,"mpf":602,"category":"Game Improvement"},{"brand":"Cleveland","model":"588 MB Forged #6","year":2012,"mpf":556,"category":"Game Improvement"},{"brand":"Callaway","model":"XR Pro #6","year":2015,"mpf":601,"category":"Game Improvement"},{"brand":"Wishon","model":"752TC","year":2003,"mpf":556,"category":"Game Improvement"},{"brand":"Titleist","model":"775 #6","year":2006,"mpf":601,"category":"Game Improvement"},{"brand":"Ping","model":"G730 #6","year":2024,"mpf":555,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Fire Forged 2","year":2005,"mpf":601,"category":"Game Improvement"},{"brand":"Titleist","model":"DCI","year":1991,"mpf":555,"category":"Game Improvement"},{"brand":"Mizuno","model":"T-ZOID Comp EZ #6","year":2003,"mpf":601,"category":"Game Improvement"},{"brand":"Adams","model":"Idea a30S Hybrid #6","year":2010,"mpf":554,"category":"Game Improvement"},{"brand":"MacGregor","model":"V-Foil 1025m (forged)","year":2001,"mpf":600,"category":"Game Improvement"},{"brand":"Titleist","model":"T100 Forged #6","year":2024,"mpf":553,"category":"Game Improvement"},{"brand":"Callaway","model":"Ai Smoke #6","year":2024,"mpf":599,"category":"Game Improvement"},{"brand":"Mizuno","model":"JPX 925 Forged Black #6","year":2025,"mpf":552,"category":"Game Improvement"},{"brand":"PXG","model":"0311 P Gen 7 SX Forged #6","year":2025,"mpf":596,"category":"Game Improvement"},{"brand":"TaylorMade","model":"P770 #6","year":2021,"mpf":552,"category":"Game Improvement"},{"brand":"Cobra","model":"Carbon CB #6","year":2006,"mpf":596,"category":"Game Improvement"},{"brand":"Titleist","model":"T-MB 718 #6","year":2018,"mpf":552,"category":"Game Improvement"},{"brand":"Tommy Armour","model":"Morph #6","year":2005,"mpf":596,"category":"Game Improvement"},{"brand":"Ping","model":"S56 #6","year":2011,"mpf":552,"category":"Game Improvement"},{"brand":"Ping","model":"S55 #6","year":2014,"mpf":594,"category":"Game Improvement"},{"brand":"TaylorMade","model":"R7 TP #6","year":2006,"mpf":552,"category":"Game Improvement"},{"brand":"Callaway","model":"X-22 Tour #6","year":2009,"mpf":594,"category":"Game Improvement"},{"brand":"Wilson Staff","model":"Ultra 45","year":1993,"mpf":552,"category":"Game Improvement"},{"brand":"Ben Hogan","model":"Magnum Plus","year":1991,"mpf":594,"category":"Game Improvement"},{"brand":"Tommy Armour","model":"845 Max #6","year":2020,"mpf":593,"category":"Game Improvement"},{"brand":"Titleist","model":"AP2 #6","year":2008,"mpf":551,"category":"Game Improvement"},{"brand":"Golfsmith","model":"P2 G #5","year":2007,"mpf":593,"category":"Game Improvement"},{"brand":"Callaway","model":"Mavrik Pro Forged #6","year":2020,"mpf":592,"category":"Game Improvement"},{"brand":"Mizuno","model":"MP-18 MMC FLI-HI #6","year":2018,"mpf":590,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Spalding Black Hawk","year":2003,"mpf":590,"category":"Game Improvement"},{"brand":"Wilson","model":"1200 #5","year":1973,"mpf":590,"category":"Game Improvement"},{"brand":"Callaway","model":"X2 Hot #6","year":2014,"mpf":589,"category":"Game Improvement"},{"brand":"TaylorMade","model":"Psi #6","year":2016,"mpf":550,"category":"Game Improvement"},{"brand":"Titleist","model":"775 CB #6","year":2006,"mpf":588,"category":"Game Improvement"},{"brand":"Nike","model":"Sumo SQ","year":2008,"mpf":550,"category":"Game Improvement"},{"brand":"TaylorMade","model":"T-D Tour Preferred","year":1988,"mpf":588,"category":"Game Improvement"},{"brand":"Titleist","model":"AP2 710 Forged #6","year":2010,"mpf":548,"category":"Game Improvement"},{"brand":"Nike","model":"Vrs Covert #6","year":2013,"mpf":587,"category":"Game Improvement"},{"brand":"Adams","model":"GT Tight Lies","year":2003,"mpf":547,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Viper LS","year":2003,"mpf":587,"category":"Game Improvement"},{"brand":"Ping","model":"i 3 Blade","year":2001,"mpf":546,"category":"Game Improvement"},{"brand":"TaylorMade","model":"300","year":2001,"mpf":586,"category":"Game Improvement"},{"brand":"Titleist","model":"T200 #6","year":2021,"mpf":585,"category":"Game Improvement"},{"brand":"Mizuno","model":"Pro 245 #6","year":2024,"mpf":543,"category":"Game Improvement"},{"brand":"Cobra","model":"AMP Forged #6","year":2012,"mpf":584,"category":"Game Improvement"},{"brand":"PXG","model":"Gen 5 0311 T #6","year":2022,"mpf":543,"category":"Game Improvement"},{"brand":"Callaway","model":"Rogue Pro #6","year":2018,"mpf":583,"category":"Game Improvement"},{"brand":"Callaway","model":"Diablo Forged #6","year":2010,"mpf":543,"category":"Game Improvement"},{"brand":"Adams","model":"A2 OS Hybrid #6","year":2006,"mpf":583,"category":"Game Improvement"},{"brand":"Mizuno","model":"M-15 #6","year":2026,"mpf":542,"category":"Game Improvement"},{"brand":"Cleveland","model":"588 Altitude Face Forged # 6","year":2013,"mpf":581,"category":"Game Improvement"},{"brand":"Cobra","model":"King Forged TEC-X #6","year":2022,"mpf":542,"category":"Game Improvement"},{"brand":"Titleist","model":"704 CB (forged stainless)","year":2004,"mpf":542,"category":"Game Improvement"},{"brand":"Titleist","model":"T100S #6","year":2021,"mpf":580,"category":"Game Improvement"},{"brand":"Srixon","model":"Z335 Womens #6","year":2016,"mpf":541,"category":"Game Improvement"},{"brand":"Cobra","model":"King Forged One #6","year":2017,"mpf":579,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Z9 Forged Face #5","year":2007,"mpf":541,"category":"Game Improvement"},{"brand":"Mizuno","model":"JPX 850 Women's #7","year":2015,"mpf":579,"category":"Game Improvement"},{"brand":"Spalding","model":"Top-Flite Tour","year":1998,"mpf":541,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snakes Eyes 675B","year":2008,"mpf":579,"category":"Game Improvement"},{"brand":"Ping","model":"i540 #6","year":2026,"mpf":540,"category":"Game Improvement"},{"brand":"Nike","model":"CCi #6","year":2006,"mpf":579,"category":"Game Improvement"},{"brand":"TaylorMade","model":"P790 #6","year":2018,"mpf":540,"category":"Game Improvement"},{"brand":"Cobra","model":"Baffler Blade II","year":1989,"mpf":579,"category":"Game Improvement"},{"brand":"TaylorMade","model":"Burner Plus Women’s #6","year":2009,"mpf":538,"category":"Game Improvement"},{"brand":"Golfsmith","model":"XPC Max #5","year":2007,"mpf":578,"category":"Game Improvement"},{"brand":"MacGregor","model":"M675 #6","year":2005,"mpf":537,"category":"Game Improvement"},{"brand":"Ping","model":"I3 + Blade #6","year":2004,"mpf":578,"category":"Game Improvement"},{"brand":"Maltby","model":"Logic Pro Tour","year":1999,"mpf":537,"category":"Game Improvement"},{"brand":"Mizuno","model":"JPX 925 Forged #6","year":2025,"mpf":577,"category":"Game Improvement"},{"brand":"Mizuno","model":"JPX 921 Forged #6","year":2021,"mpf":536,"category":"Game Improvement"},{"brand":"Srixon","model":"ZU85 #6","year":2019,"mpf":577,"category":"Game Improvement"},{"brand":"Wishon","model":"550M Forged #6","year":2010,"mpf":536,"category":"Game Improvement"},{"brand":"Mizuno","model":"JPX EZ Forged #6","year":2014,"mpf":577,"category":"Game Improvement"},{"brand":"Bridgestone","model":"J 33 #6","year":2005,"mpf":536,"category":"Game Improvement"},{"brand":"Ben Hogan","model":"Edge CFT","year":2004,"mpf":577,"category":"Game Improvement"},{"brand":"Cobra","model":"Gravity Back (optimum inertia)","year":1999,"mpf":536,"category":"Game Improvement"},{"brand":"TaylorMade","model":"P7CB Forged #6","year":2025,"mpf":576,"category":"Game Improvement"},{"brand":"Titleist","model":"T150 Forged #6","year":2024,"mpf":576,"category":"Game Improvement"},{"brand":"Cobra","model":"King Tec Forged #6","year":2025,"mpf":535,"category":"Game Improvement"},{"brand":"Maxfli","model":"Australian Blade (MCT-97)","year":1997,"mpf":576,"category":"Game Improvement"},{"brand":"Mizuno","model":"MX-950 Hemi COG Hybrid","year":2008,"mpf":535,"category":"Game Improvement"},{"brand":"TaylorMade","model":"360","year":2002,"mpf":576,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes VNM #5","year":2008,"mpf":533,"category":"Game Improvement"},{"brand":"Yonex","model":"EZOne #6","year":2014,"mpf":575,"category":"Game Improvement"},{"brand":"Mizuno","model":"Pro 223 Forged #6","year":2023,"mpf":532,"category":"Game Improvement"},{"brand":"Titleist","model":"T200 Forged #6","year":2024,"mpf":574,"category":"Game Improvement"},{"brand":"Callaway","model":"Max X Forged #6","year":2026,"mpf":531,"category":"Game Improvement"},{"brand":"Takomo","model":"Iron 101 #6","year":2024,"mpf":573,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes TC-01","year":2000,"mpf":531,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Viper MS","year":2000,"mpf":573,"category":"Game Improvement"},{"brand":"Titleist","model":"T100S Forged #6","year":2020,"mpf":530,"category":"Game Improvement"},{"brand":"Cleveland","model":"TA2 #6","year":2003,"mpf":572,"category":"Game Improvement"},{"brand":"Nike","model":"Slingshot #6","year":2010,"mpf":530,"category":"Game Improvement"},{"brand":"Titleist","model":"DCI Oversize +","year":1995,"mpf":529,"category":"Game Improvement"},{"brand":"Takomo","model":"Iron 101T #6","year":2024,"mpf":571,"category":"Game Improvement"},{"brand":"Titleist","model":"T100 Forged #6","year":2020,"mpf":528,"category":"Game Improvement"},{"brand":"Golfsmith","model":"XPC4","year":2004,"mpf":571,"category":"Game Improvement"},{"brand":"TaylorMade","model":"Tour Burner #6","year":2009,"mpf":528,"category":"Game Improvement"},{"brand":"Adams","model":"Idea Tech V4 Hybrid #6","year":2013,"mpf":570,"category":"Game Improvement"},{"brand":"Cleveland","model":"TA2","year":2003,"mpf":528,"category":"Game Improvement"},{"brand":"Cobra","model":"King Cobra Transition S #5","year":2007,"mpf":570,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Harvey Penick Professional Tour","year":2000,"mpf":528,"category":"Game Improvement"},{"brand":"Dynacraft","model":"PC3 Power Chamber","year":2004,"mpf":570,"category":"Game Improvement"},{"brand":"Callaway","model":"Apex Forged Ai200 #6","year":2025,"mpf":526,"category":"Game Improvement"},{"brand":"Titleist","model":"T100 #6","year":2021,"mpf":569,"category":"Game Improvement"},{"brand":"Bridgestone","model":"J15DF Forged#6","year":2015,"mpf":526,"category":"Game Improvement"},{"brand":"Dynacraft","model":"Oversize","year":1994,"mpf":569,"category":"Game Improvement"},{"brand":"Wilson","model":"X-31 (forged) #6","year":1969,"mpf":525,"category":"Game Improvement"},{"brand":"Srixon","model":"ZXi5 Forged #6","year":2025,"mpf":567,"category":"Game Improvement"},{"brand":"Cobra","model":"King Forged TEC #6","year":2022,"mpf":524,"category":"Game Improvement"},{"brand":"TaylorMade","model":"P770 Forged #6","year":2023,"mpf":567,"category":"Game Improvement"},{"brand":"Wilson","model":"Launch Pad #6","year":2020,"mpf":524,"category":"Game Improvement"},{"brand":"Cleveland","model":"CG2 #6","year":2005,"mpf":567,"category":"Game Improvement"},{"brand":"Wilson","model":"D100 #6","year":2014,"mpf":524,"category":"Game Improvement"},{"brand":"TaylorMade","model":"Ti Bubble 2","year":1997,"mpf":567,"category":"Game Improvement"},{"brand":"Titleist","model":"695MB #6","year":2006,"mpf":523,"category":"Game Improvement"},{"brand":"Tour Edge","model":"Bazooka QLS #6","year":2010,"mpf":566,"category":"Game Improvement"},{"brand":"Wilson Staff","model":"R. Mendralla #5","year":1999,"mpf":523,"category":"Game Improvement"},{"brand":"Maxfli","model":"VT Tour Forged #6","year":2010,"mpf":566,"category":"Game Improvement"},{"brand":"Dynacraft","model":"Limited","year":1995,"mpf":523,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Viper Ti Steel","year":2004,"mpf":566,"category":"Game Improvement"},{"brand":"PXG","model":"PXG 0311T #6","year":2016,"mpf":522,"category":"Game Improvement"},{"brand":"TaylorMade","model":"Tour Burner #6","year":2008,"mpf":520,"category":"Game Improvement"},{"brand":"Adams","model":"Tight Lies UC 10","year":2004,"mpf":565,"category":"Game Improvement"},{"brand":"Mizuno","model":"T-ZOID Pro #6","year":1999,"mpf":520,"category":"Game Improvement"},{"brand":"GolfWorks","model":"Rim Fire","year":2000,"mpf":565,"category":"Game Improvement"},{"brand":"TaylorMade","model":"P770 #6","year":2017,"mpf":518,"category":"Game Improvement"},{"brand":"PXG","model":"0211 XCOR2 V3 #6","year":2022,"mpf":564,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes 600B Forged","year":2005,"mpf":518,"category":"Game Improvement"},{"brand":"Maxfli","model":"VHL (oversize)","year":1996,"mpf":564,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Snake Eyes Python OS","year":2006,"mpf":518,"category":"Game Improvement"},{"brand":"Ping","model":"Anser Forged #6","year":2013,"mpf":563,"category":"Game Improvement"},{"brand":"Wilson","model":"D7 #6","year":2019,"mpf":517,"category":"Game Improvement"},{"brand":"Tour Edge","model":"Exotics XCG #6","year":2010,"mpf":563,"category":"Game Improvement"},{"brand":"Titleist","model":"AP2 714 #6","year":2014,"mpf":517,"category":"Game Improvement"},{"brand":"Lynx","model":"Black Cat Tour","year":1998,"mpf":563,"category":"Game Improvement"},{"brand":"Titleist","model":"CB 710 Forged #6","year":2010,"mpf":517,"category":"Game Improvement"},{"brand":"Nike","model":"Vr TW Forged #6","year":2009,"mpf":516,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Tour Cavity Professional Grind","year":2000,"mpf":562,"category":"Game Improvement"},{"brand":"Golfsmith","model":"Tour Cavity Forged","year":2000,"mpf":515,"category":"Game Improvement"},{"brand":"Ping","model":"i 3 O-Size","year":2001,"mpf":514,"category":"Conventional"},{"brand":"Callaway","model":"X-Tour #6","year":2005,"mpf":460,"category":"Conventional"},{"brand":"TaylorMade","model":"TP #6","year":2005,"mpf":514,"category":"Conventional"},{"brand":"Ben Hogan","model":"Apex (forged)","year":1973,"mpf":459,"category":"Conventional"},{"brand":"Mizuno","model":"MX025 #6","year":2006,"mpf":514,"category":"Conventional"},{"brand":"Ram","model":"FX2 Flow Weighted","year":1994,"mpf":459,"category":"Conventional"},{"brand":"Ping","model":"Blueprint S #6","year":2024,"mpf":513,"category":"Conventional"},{"brand":"Wishon","model":"702 W","year":2005,"mpf":459,"category":"Conventional"},{"brand":"Ping","model":"i25 #6","year":2014,"mpf":512,"category":"Conventional"},{"brand":"Ping","model":"Blueprint Forged #6","year":2020,"mpf":458,"category":"Conventional"},{"brand":"Precept","model":"Tour Premium CB","year":2001,"mpf":512,"category":"Conventional"},{"brand":"Titleist","model":"T-MB #6","year":2016,"mpf":458,"category":"Conventional"},{"brand":"Tommy Armour","model":"845 EVO V-31 RO Blade","year":2000,"mpf":512,"category":"Conventional"},{"brand":"Nike","model":"Vr #6","year":2009,"mpf":458,"category":"Conventional"},{"brand":"Nike","model":"VRS Covert Forged #6","year":2014,"mpf":511,"category":"Conventional"},{"brand":"Nike","model":"SlingShot HL Hybrid #5 Women’s","year":2009,"mpf":458,"category":"Conventional"},{"brand":"Callaway","model":"X2 Hot Pro #6","year":2014,"mpf":510,"category":"Conventional"},{"brand":"Nike","model":"Vr-Pro Combo Forged-P #6","year":2011,"mpf":457,"category":"Conventional"},{"brand":"Titleist","model":"AP2 718 #6","year":2018,"mpf":508,"category":"Conventional"},{"brand":"Nike","model":"SlingShot HL Hybrid #5","year":2009,"mpf":457,"category":"Conventional"},{"brand":"TaylorMade","model":"R11 #6","year":2012,"mpf":508,"category":"Conventional"},{"brand":"TaylorMade","model":"R7 CGB #6","year":2006,"mpf":457,"category":"Conventional"},{"brand":"TaylorMade","model":"CB Forged-Tour Preferred #6","year":2011,"mpf":508,"category":"Conventional"},{"brand":"Mizuno","model":"MP-14","year":1994,"mpf":457,"category":"Conventional"},{"brand":"Tommy Armour","model":"855s Golden Scot #6","year":1996,"mpf":508,"category":"Conventional"},{"brand":"Spalding","model":"Top-Flite Plus","year":1990,"mpf":457,"category":"Conventional"},{"brand":"Srixon","model":"ZXi7 Forged #6","year":2025,"mpf":507,"category":"Conventional"},{"brand":"Nike","model":"Vapor Fly #6","year":2016,"mpf":456,"category":"Conventional"},{"brand":"Cobra","model":"King Forged TEC One #6","year":2020,"mpf":507,"category":"Conventional"},{"brand":"Callaway","model":"X Forged CB #6","year":2021,"mpf":455,"category":"Conventional"},{"brand":"Mizuno","model":"M-13 #6","year":2026,"mpf":506,"category":"Conventional"},{"brand":"Wilson","model":"D300 #6","year":2017,"mpf":455,"category":"Conventional"},{"brand":"Golfsmith","model":"Snake Eyes 600c Forged","year":2005,"mpf":506,"category":"Conventional"},{"brand":"Bridgestone","model":"J-40 Forged #6 V-Cavity","year":2012,"mpf":455,"category":"Conventional"},{"brand":"Mizuno","model":"Pro 243 #6","year":2024,"mpf":505,"category":"Conventional"},{"brand":"Cleveland","model":"588 CB Forged #6","year":2012,"mpf":454,"category":"Conventional"},{"brand":"Srixon","model":"Z585 #6","year":2019,"mpf":504,"category":"Conventional"},{"brand":"Mizuno","model":"MP-53 Forged #6","year":2011,"mpf":454,"category":"Conventional"},{"brand":"Titleist","model":"AP2-712 Forged #6","year":2012,"mpf":504,"category":"Conventional"},{"brand":"Tommy Armour","model":"Silver Scot #6","year":2006,"mpf":454,"category":"Conventional"},{"brand":"Callaway","model":"X Forged #6","year":2026,"mpf":503,"category":"Conventional"},{"brand":"Ben Hogan","model":"Apex (forged)","year":2004,"mpf":453,"category":"Conventional"},{"brand":"Mizuno","model":"MX-900 #6","year":2006,"mpf":503,"category":"Conventional"},{"brand":"Mizuno","model":"MP-60 #6","year":2006,"mpf":451,"category":"Conventional"},{"brand":"Golfsmith","model":"Snake Eyes 675XC","year":2008,"mpf":502,"category":"Conventional"},{"brand":"Wishon","model":"939 H","year":2003,"mpf":450,"category":"Conventional"},{"brand":"Mizuno","model":"Alton #5","year":1998,"mpf":502,"category":"Conventional"},{"brand":"Mizuno","model":"JPX 923 Tour #6","year":2023,"mpf":446,"category":"Conventional"},{"brand":"TaylorMade","model":"Burner Super Launch #6","year":2011,"mpf":501,"category":"Conventional"},{"brand":"Dynacraft","model":"1030b","year":2004,"mpf":446,"category":"Conventional"},{"brand":"MacGregor","model":"M685 #6","year":2006,"mpf":501,"category":"Conventional"},{"brand":"KZG","model":"Forged II-M","year":2003,"mpf":445,"category":"Conventional"},{"brand":"Ben Hogan","model":"Apex Edge","year":2001,"mpf":501,"category":"Conventional"},{"brand":"Mizuno","model":"JPX 921 Tour #6","year":2021,"mpf":443,"category":"Conventional"},{"brand":"Cobra","model":"King Forged Tec One #6","year":2019,"mpf":500,"category":"Conventional"},{"brand":"Adams","model":"Idea Pro Gold Forged #6","year":2010,"mpf":442,"category":"Conventional"},{"brand":"Lynx","model":"Black Cat Tour Milled DC #5","year":2006,"mpf":499,"category":"Conventional"},{"brand":"Golfsmith","model":"Harvey Penick Plus Tungsten","year":2000,"mpf":442,"category":"Conventional"},{"brand":"Wilson","model":"Dynapwr #6","year":2023,"mpf":498,"category":"Conventional"},{"brand":"Titleist","model":"DCI 990B","year":2000,"mpf":441,"category":"Conventional"},{"brand":"Callaway","model":"RAZR-R-Muscle Back #6","year":2012,"mpf":498,"category":"Conventional"},{"brand":"Cobra","model":"S3 Pro Forged-C #6","year":2011,"mpf":440,"category":"Conventional"},{"brand":"Srixon","model":"Z565 #6","year":2017,"mpf":497,"category":"Conventional"},{"brand":"Srixon","model":"Z Star #6","year":2011,"mpf":440,"category":"Conventional"},{"brand":"Mizuno","model":"TZOID MX20 #6","year":2002,"mpf":497,"category":"Conventional"},{"brand":"MacGregor","model":"Tourney","year":1999,"mpf":440,"category":"Conventional"},{"brand":"Mizuno","model":"JPX 800 Forged #6","year":2011,"mpf":496,"category":"Conventional"},{"brand":"Wilson","model":"D7 Forged #6","year":2020,"mpf":438,"category":"Conventional"},{"brand":"Ben Hogan","model":"Edge GCD Tour","year":1996,"mpf":496,"category":"Conventional"},{"brand":"Mizuno","model":"JPX 900 Forged #6","year":2017,"mpf":438,"category":"Conventional"},{"brand":"Titleist","model":"ZB Forged #6","year":2008,"mpf":495,"category":"Conventional"},{"brand":"TaylorMade","model":"MC Forged-Tour Preferred #6","year":2011,"mpf":438,"category":"Conventional"},{"brand":"Golfsmith","model":"XPC Tour Steel","year":2001,"mpf":495,"category":"Conventional"},{"brand":"Ben Hogan","model":"Director (forged)","year":1974,"mpf":438,"category":"Conventional"},{"brand":"Titleist","model":"DCI 962","year":1998,"mpf":495,"category":"Conventional"},{"brand":"Nicklaus","model":"Airbear Tour","year":1997,"mpf":438,"category":"Conventional"},{"brand":"Titleist","model":"CB Forged 714 #6","year":2014,"mpf":494,"category":"Conventional"},{"brand":"Spalding","model":"Executive MV2","year":1971,"mpf":437,"category":"Conventional"},{"brand":"Cobra","model":"King Cobra Pro CB #6","year":2008,"mpf":494,"category":"Conventional"},{"brand":"Founders Club","model":"The Judge-Tour CB forged","year":1999,"mpf":436,"category":"Conventional"},{"brand":"Cleveland","model":"CG Red MCT","year":2008,"mpf":493,"category":"Conventional"},{"brand":"Mizuno","model":"JPX 919 Tour #6","year":2019,"mpf":433,"category":"Conventional"},{"brand":"Adams","model":"Tight Lies Tour","year":2001,"mpf":493,"category":"Conventional"},{"brand":"Golfsmith","model":"XPC 3000","year":2003,"mpf":433,"category":"Conventional"},{"brand":"Cleveland","model":"CG-16 Tour-Laser Milled #6","year":2011,"mpf":492,"category":"Conventional"},{"brand":"TaylorMade","model":"P760 #6","year":2019,"mpf":432,"category":"Conventional"},{"brand":"Srixon","model":"ZX7 #6","year":2021,"mpf":491,"category":"Conventional"},{"brand":"Ben Hogan","model":"Apex F T X #6","year":2004,"mpf":432,"category":"Conventional"},{"brand":"Golfsmith","model":"Tour Cavity Pro","year":2001,"mpf":491,"category":"Conventional"},{"brand":"Ping","model":"i240 #6","year":2025,"mpf":431,"category":"Conventional"},{"brand":"Srixon","model":"Z545 #6","year":2016,"mpf":489,"category":"Conventional"},{"brand":"Titleist","model":"690 CB (forged)","year":2002,"mpf":431,"category":"Conventional"},{"brand":"Callaway","model":"Apex 21 Pro #6","year":2021,"mpf":487,"category":"Conventional"},{"brand":"Takomo","model":"301 CB #6","year":2024,"mpf":430,"category":"Conventional"},{"brand":"Callaway","model":"Apex CB Forged 24 #6","year":2024,"mpf":486,"category":"Conventional"},{"brand":"Ping","model":"iBlade #6","year":2017,"mpf":430,"category":"Conventional"},{"brand":"Cobra","model":"King Tour #6","year":2023,"mpf":484,"category":"Conventional"},{"brand":"Mizuno","model":"JPX 825 Pro Forged #6","year":2013,"mpf":429,"category":"Conventional"},{"brand":"Tommy Armour","model":"845 HB","year":2004,"mpf":484,"category":"Conventional"},{"brand":"Golfsmith","model":"Snake Eyes 675C","year":2008,"mpf":429,"category":"Conventional"},{"brand":"Callaway","model":"Apex Forged Ai300 #6","year":2025,"mpf":483,"category":"Conventional"},{"brand":"Tommy Armour","model":"845 EVO V-31","year":2000,"mpf":429,"category":"Conventional"},{"brand":"Cleveland","model":"CG1 #6","year":2005,"mpf":483,"category":"Conventional"},{"brand":"Cobra","model":"King CB #6","year":2023,"mpf":428,"category":"Conventional"},{"brand":"Adams","model":"Idea CMB Tungsten Forged #6","year":2013,"mpf":483,"category":"Conventional"},{"brand":"Mizuno","model":"MP-54 Forged #6","year":2014,"mpf":428,"category":"Conventional"},{"brand":"Callaway","model":"Apex 21 #6","year":2021,"mpf":481,"category":"Conventional"},{"brand":"Mizuno","model":"Pro-II #6","year":2000,"mpf":427,"category":"Conventional"},{"brand":"Wishon","model":"870 Ti Ticor #6","year":2010,"mpf":481,"category":"Conventional"},{"brand":"Srixon","model":"Z-Forged II #6","year":2025,"mpf":426,"category":"Conventional"},{"brand":"Golfsmith","model":"HI-COR","year":2006,"mpf":481,"category":"Conventional"},{"brand":"Wilson","model":"C100 #6","year":2014,"mpf":426,"category":"Conventional"},{"brand":"Ping","model":"i530 #6","year":2024,"mpf":480,"category":"Conventional"},{"brand":"Mizuno","model":"MP-59 Ti Muscle Forged #6","year":2012,"mpf":426,"category":"Conventional"},{"brand":"TaylorMade","model":"Burner Super Launch Women’s #6","year":2011,"mpf":480,"category":"Conventional"},{"brand":"Golfsmith","model":"XPC Sapphire","year":2002,"mpf":480,"category":"Conventional"},{"brand":"Cleveland","model":"CG-1 Tour Forged #6","year":2011,"mpf":425,"category":"Conventional"},{"brand":"TaylorMade","model":"R7 CGB Max","year":2008,"mpf":479,"category":"Conventional"},{"brand":"Cobra","model":"S3 Forged-M #6","year":2011,"mpf":424,"category":"Conventional"},{"brand":"Mizuno","model":"MP-20 HMB #6","year":2020,"mpf":478,"category":"Conventional"},{"brand":"Adams","model":"Idea Tech a40S #6","year":2010,"mpf":424,"category":"Conventional"},{"brand":"Callaway","model":"Apex Forged #6","year":2019,"mpf":476,"category":"Conventional"},{"brand":"Maxfli","model":"Tour Limited A10 #6","year":2002,"mpf":423,"category":"Conventional"},{"brand":"Cobra","model":"King Cobra Pro CB Forged #6","year":2011,"mpf":476,"category":"Conventional"},{"brand":"TaylorMade","model":"RSi 2","year":2015,"mpf":422,"category":"Conventional"},{"brand":"Adams","model":"Idea Super S #6","year":2013,"mpf":422,"category":"Conventional"},{"brand":"Wilson","model":"C300 #6","year":2018,"mpf":475,"category":"Conventional"},{"brand":"Titleist","model":"DCI 990","year":2000,"mpf":422,"category":"Conventional"},{"brand":"Titleist","model":"822-OS","year":2002,"mpf":475,"category":"Conventional"},{"brand":"Spalding","model":"Top-Flite Dy-Nertial","year":1974,"mpf":421,"category":"Conventional"},{"brand":"Ping","model":"i200 #6","year":2017,"mpf":474,"category":"Conventional"},{"brand":"Wilson","model":"FG Tour 100 Forged #6","year":2014,"mpf":419,"category":"Conventional"},{"brand":"Cobra","model":"King Forged Tech #6","year":2016,"mpf":474,"category":"Conventional"},{"brand":"Mizuno","model":"MX-200 Forged #6","year":2009,"mpf":419,"category":"Conventional"},{"brand":"TaylorMade","model":"RAC Coin #6 (forged)","year":2003,"mpf":474,"category":"Conventional"},{"brand":"Mizuno","model":"MP-33","year":1999,"mpf":419,"category":"Conventional"},{"brand":"Wilson","model":"Custom Laura Baugh #5","year":1975,"mpf":474,"category":"Conventional"},{"brand":"Srixon","model":"Z765 #6","year":2017,"mpf":473,"category":"Conventional"},{"brand":"TaylorMade","model":"R7 Draw #6","year":2006,"mpf":418,"category":"Conventional"},{"brand":"Wishon","model":"560 MC Forged #5","year":2006,"mpf":473,"category":"Conventional"},{"brand":"Wishon","model":"951 XA","year":2003,"mpf":418,"category":"Conventional"},{"brand":"TaylorMade","model":"P7MC #6","year":2021,"mpf":417,"category":"Conventional"},{"brand":"Mizuno","model":"Pro 225 Forged #6","year":2023,"mpf":472,"category":"Conventional"},{"brand":"Srixon","model":"Z745 #6","year":2016,"mpf":417,"category":"Conventional"},{"brand":"Cobra","model":"King Forged TEC #6","year":2020,"mpf":472,"category":"Conventional"},{"brand":"Titleist","model":"716 AP2 #6","year":2016,"mpf":417,"category":"Conventional"},{"brand":"Wishon","model":"555M Forged #6","year":2010,"mpf":472,"category":"Conventional"},{"brand":"Callaway","model":"Apex Pro Forged #6","year":2014,"mpf":417,"category":"Conventional"},{"brand":"Ben Hogan","model":"Apex Edge Pro","year":2002,"mpf":471,"category":"Conventional"},{"brand":"Mizuno","model":"MP-20 MMCTi #6","year":2020,"mpf":416,"category":"Conventional"},{"brand":"Cobra","model":"TRD II V-groove","year":1990,"mpf":471,"category":"Conventional"},{"brand":"Wilson","model":"D200 #6","year":2015,"mpf":416,"category":"Conventional"},{"brand":"Callaway","model":"Apex MB Forged 24 #6","year":2024,"mpf":470,"category":"Conventional"},{"brand":"Tommy Armour","model":"845 Forged #6","year":2020,"mpf":415,"category":"Conventional"},{"brand":"Ping","model":"i20 #6","year":2012,"mpf":469,"category":"Conventional"},{"brand":"Cobra","model":"King Forged Tec #6","year":2019,"mpf":415,"category":"Conventional"},{"brand":"Bridgestone","model":"J 33 Center Pad #6","year":2005,"mpf":469,"category":"Conventional"},{"brand":"Titleist","model":"CB Forged 718 #6","year":2018,"mpf":413,"category":"Conventional"},{"brand":"Dynacraft","model":"1030cv","year":2004,"mpf":468,"category":"Conventional"},{"brand":"Wilson","model":"D100 ES #6","year":2014,"mpf":413,"category":"Conventional"},{"brand":"Wilson","model":"FG Tour M3 Forged #6","year":2014,"mpf":466,"category":"Conventional"},{"brand":"Mizuno","model":"MP-32 #6","year":2004,"mpf":412,"category":"Conventional"},{"brand":"Dynacraft","model":"Tour Caliber forged (cavity)","year":1995,"mpf":466,"category":"Conventional"},{"brand":"Titleist","model":"690 MB (forged)","year":2002,"mpf":412,"category":"Conventional"},{"brand":"Mizuno","model":"Pro S3 #6","year":2025,"mpf":465,"category":"Conventional"},{"brand":"PXG","model":"0317 ST Milled Blade #6","year":2022,"mpf":411,"category":"Conventional"},{"brand":"Titleist","model":"620 CB Forged #6","year":2020,"mpf":465,"category":"Conventional"},{"brand":"Mizuno","model":"MP-57 Cut Muscle","year":2008,"mpf":411,"category":"Conventional"},{"brand":"Titleist","model":"CB #6","year":2016,"mpf":464,"category":"Conventional"},{"brand":"Mizuno","model":"Pro 241 #6","year":2024,"mpf":410,"category":"Conventional"},{"brand":"TaylorMade","model":"Tour Preferred CB #6","year":2014,"mpf":464,"category":"Conventional"},{"brand":"Golfsmith","model":"D2 G #5","year":2007,"mpf":410,"category":"Conventional"},{"brand":"Srixon","model":"Z-TX Forged #6","year":2010,"mpf":464,"category":"Conventional"},{"brand":"TaylorMade","model":"P 7MC Forged #6","year":2023,"mpf":408,"category":"Conventional"},{"brand":"Mizuno","model":"MX-1000 #6","year":2010,"mpf":463,"category":"Conventional"},{"brand":"Callaway","model":"Apex MB #6","year":2021,"mpf":408,"category":"Conventional"},{"brand":"Mizuno","model":"MX-23 #6","year":2004,"mpf":463,"category":"Conventional"},{"brand":"Cleveland","model":"CG4 Tour #6","year":2010,"mpf":406,"category":"Conventional"},{"brand":"Wishon","model":"705 W2 #6","year":2010,"mpf":462,"category":"Conventional"},{"brand":"Callaway","model":"Apex Pro #6","year":2016,"mpf":405,"category":"Conventional"},{"brand":"Miura","model":"Passing Point PP-9003 Forged #6","year":2012,"mpf":461,"category":"Conventional"},{"brand":"Mizuno","model":"MX-300 Forged #6","year":2010,"mpf":405,"category":"Conventional"},{"brand":"Callaway","model":"Prototype-R #6","year":2010,"mpf":461,"category":"Conventional"},{"brand":"Cleveland","model":"TA1 (form forged)","year":1999,"mpf":405,"category":"Conventional"},{"brand":"Mizuno","model":"MP-30 #6","year":2004,"mpf":461,"category":"Conventional"},{"brand":"KZG","model":"Forged II","year":2003,"mpf":405,"category":"Conventional"},{"brand":"Callaway","model":"Apex Pro Forged #6","year":2019,"mpf":460,"category":"Conventional"},{"brand":"Mizuno","model":"MP-69 Forged #6","year":2012,"mpf":403,"category":"Conventional"},{"brand":"MacGregor","model":"Super Tourney","year":1998,"mpf":329,"category":"Conventional"},{"brand":"Mizuno","model":"MP-63 Forged #6","year":2011,"mpf":403,"category":"Conventional"},{"brand":"Srixon","model":"I-302 forged","year":2005,"mpf":329,"category":"Classic"},{"brand":"Turner","model":"T2 Optimized Trajectory","year":2005,"mpf":405,"category":"Conventional"},{"brand":"Nike","model":"VR Forged #6","year":2009,"mpf":328,"category":"Classic"},{"brand":"Srixon","model":"Z785 #6","year":2019,"mpf":402,"category":"Conventional"},{"brand":"Ping","model":"i525 #6","year":2022,"mpf":327,"category":"Classic"},{"brand":"Titleist","model":"680 (forged)","year":2003,"mpf":402,"category":"Conventional"},{"brand":"Nike","model":"VR Forged #6","year":2014,"mpf":327,"category":"Classic"},{"brand":"Ben Hogan","model":"Apex (forged)","year":2001,"mpf":327,"category":"Classic"},{"brand":"Nike","model":"Pro Combo","year":2005,"mpf":327,"category":"Conventional"},{"brand":"Callaway","model":"Apex MB #6","year":2015,"mpf":322,"category":"Conventional"},{"brand":"TaylorMade","model":"P 7MB Forged #6","year":2023,"mpf":321,"category":"Conventional"},{"brand":"Titleist","model":"MB 710 Forged #6","year":2010,"mpf":321,"category":"Conventional"},{"brand":"Wilson","model":"X-31 Tour","year":2000,"mpf":320,"category":"Conventional"},{"brand":"Golfsmith","model":"Lady XPC Plus","year":2001,"mpf":400,"category":"Conventional"},{"brand":"Dynacraft","model":"Tour Caliber forged (muscle)","year":1994,"mpf":319,"category":"Classic"},{"brand":"Tommy Armour","model":"845s Oversize","year":1998,"mpf":400,"category":"Conventional"},{"brand":"Nike","model":"Ignite #6","year":2011,"mpf":314,"category":"Classic"},{"brand":"Mizuno","model":"JPX 850 Forged #6","year":2015,"mpf":399,"category":"Conventional"},{"brand":"Wishon","model":"969W #6","year":2010,"mpf":312,"category":"Classic"},{"brand":"Adams","model":"XTD Forged #6","year":2014,"mpf":399,"category":"Conventional"},{"brand":"Golfsmith","model":"Snake Eyes Quick Strike 03 #5","year":2007,"mpf":310,"category":"Classic"},{"brand":"Cobra","model":"King Forged CB #6","year":2017,"mpf":398,"category":"Conventional"},{"brand":"TaylorMade","model":"Psi Tour #6","year":2016,"mpf":306,"category":"Classic"},{"brand":"Nike","model":"Vapor Fly Pro #6","year":2016,"mpf":397,"category":"Conventional"},{"brand":"TaylorMade","model":"MB Forged-Tour Preferred #6","year":2011,"mpf":304,"category":"Classic"},{"brand":"Mizuno","model":"MP-4 #6","year":2014,"mpf":397,"category":"Conventional"},{"brand":"Mizuno","model":"Pro 221 Forged #6","year":2023,"mpf":303,"category":"Classic"},{"brand":"Nike","model":"CPR","year":2003,"mpf":395,"category":"Conventional"},{"brand":"TaylorMade","model":"P7MB #6","year":2021,"mpf":303,"category":"Classic"},{"brand":"Tommy Armour","model":"845 EVO V-25 (forged)","year":2000,"mpf":395,"category":"Conventional"},{"brand":"MacGregor","model":"MT #6","year":2008,"mpf":302,"category":"Classic"},{"brand":"Callaway","model":"X Forged #6","year":2018,"mpf":394,"category":"Conventional"},{"brand":"Wilson","model":"FG Tour V4 #6","year":2015,"mpf":291,"category":"Classic"},{"brand":"Titleist","model":"ZM Forged #6","year":2008,"mpf":394,"category":"Conventional"},{"brand":"Titleist","model":"620 Forged #6","year":2020,"mpf":287,"category":"Classic"},{"brand":"Cleveland","model":"TA3 (cast)","year":1998,"mpf":394,"category":"Conventional"},{"brand":"MacGregor","model":"MT Pro C #6","year":2008,"mpf":286,"category":"Classic"},{"brand":"Lynx","model":"Black Cat Tour Milled MC #5","year":2006,"mpf":394,"category":"Conventional"},{"brand":"Mizuno","model":"MP-18 #6","year":2018,"mpf":284,"category":"Classic"},{"brand":"Ping","model":"i230 #6","year":2023,"mpf":393,"category":"Conventional"},{"brand":"Mizuno","model":"MP-H5 #6","year":2015,"mpf":284,"category":"Classic"},{"brand":"Cobra","model":"King RF Forged MB #6","year":2022,"mpf":393,"category":"Conventional"},{"brand":"TaylorMade","model":"P-7TW #6","year":2020,"mpf":282,"category":"Classic"},{"brand":"Mizuno","model":"MP-64 Forged #6","year":2013,"mpf":393,"category":"Conventional"},{"brand":"Spalding","model":"Elite MV2","year":1971,"mpf":281,"category":"Classic"},{"brand":"Mizuno","model":"MP-52 Forged #6","year":2009,"mpf":392,"category":"Conventional"},{"brand":"Spalding","model":"Top-Flite Professional Reg. #6","year":1972,"mpf":279,"category":"Classic"},{"brand":"Golfsmith","model":"Fire Steel T2","year":2005,"mpf":392,"category":"Conventional"},{"brand":"Golfsmith","model":"XPC3 Midsize","year":1998,"mpf":277,"category":"Classic"},{"brand":"Golfsmith","model":"Snake Eyes HS 300","year":2006,"mpf":390,"category":"Conventional"},{"brand":"Wilson Staff","model":"Tour RM","year":1996,"mpf":277,"category":"Classic"},{"brand":"Toski","model":"Target","year":2001,"mpf":390,"category":"Conventional"},{"brand":"Wilson","model":"C300 Forged #6","year":2018,"mpf":269,"category":"Classic"},{"brand":"Mizuno","model":"MP-58 Forged #6","year":2010,"mpf":388,"category":"Conventional"},{"brand":"Spalding","model":"Elite Professional","year":1966,"mpf":267,"category":"Classic"},{"brand":"Wilson Staff","model":"Midsize RM","year":1996,"mpf":387,"category":"Conventional"},{"brand":"Cobra","model":"King Forged MB #6","year":2019,"mpf":262,"category":"Classic"},{"brand":"Ping","model":"Blueprint T #6","year":2024,"mpf":386,"category":"Conventional"},{"brand":"Ben Hogan","model":"Medallion","year":1978,"mpf":262,"category":"Classic"},{"brand":"TaylorMade","model":"RSi TP #6","year":2015,"mpf":386,"category":"Conventional"},{"brand":"Spalding","model":"Top-Flite Professional","year":1968,"mpf":386,"category":"Conventional"},{"brand":"Cleveland","model":"CG Tour #6","year":2010,"mpf":259,"category":"Classic"},{"brand":"Cobra","model":"King Forged CB #6","year":2019,"mpf":385,"category":"Conventional"},{"brand":"Cobra","model":"OS #5","year":1993,"mpf":253,"category":"Classic"},{"brand":"Spalding","model":"Top-Flite Professional","year":1965,"mpf":385,"category":"Conventional"},{"brand":"Wilson","model":"Dyna Powered Staff Model","year":1968,"mpf":385,"category":"Conventional"},{"brand":"Cobra","model":"King MB #6","year":2023,"mpf":384,"category":"Conventional"},{"brand":"Tour Edge","model":"Exotics 2010 CNC Forged Limited #6","year":2010,"mpf":384,"category":"Conventional"},{"brand":"Cleveland","model":"TA3 (form forged)","year":1999,"mpf":383,"category":"Players Classic"},{"brand":"Cobra","model":"King Cobra Pro MB Forged #6","year":2011,"mpf":382,"category":"Players Classic"},{"brand":"Mizuno","model":"MP-67 #6","year":2006,"mpf":381,"category":"Players Classic"},{"brand":"MacGregor","model":"Tourney #5","year":1998,"mpf":246,"category":"Players Classic"},{"brand":"Nike","model":"Vr-Pro Forged #6","year":2011,"mpf":379,"category":"Players Classic"},{"brand":"Ben Hogan","model":"Apex (forged)","year":1978,"mpf":246,"category":"Players Classic"},{"brand":"Srixon","model":"ZX Forged #6","year":2021,"mpf":377,"category":"Players Classic"},{"brand":"MacGregor","model":"MT OS #6","year":2008,"mpf":243,"category":"Players Classic"},{"brand":"Mizuno","model":"T-ZOID true","year":1999,"mpf":377,"category":"Players Classic"},{"brand":"Callaway","model":"Apex Pro Forged 24 #6","year":2024,"mpf":239,"category":"Players Classic"},{"brand":"Tommy Armour","model":"Concept 2","year":1987,"mpf":377,"category":"Players Classic"},{"brand":"Nike","model":"Vapor Pro #6","year":2015,"mpf":235,"category":"Players Classic"},{"brand":"Mizuno","model":"MP-37","year":2005,"mpf":376,"category":"Players Classic"},{"brand":"Maxfli","model":"Australian Blade (TM-92)","year":1992,"mpf":234,"category":"Players Classic"},{"brand":"Mizuno","model":"MP-15 Ti Muscle #6","year":2015,"mpf":374,"category":"Players Classic"},{"brand":"Cleveland","model":"CG7 Tour Zip Grooves #6","year":2010,"mpf":374,"category":"Players Classic"},{"brand":"Wilson","model":"FG Tour V6 Forged #6","year":2017,"mpf":224,"category":"Players Classic"},{"brand":"Adams","model":"Idea #6","year":2004,"mpf":374,"category":"Players Classic"},{"brand":"MacGregor","model":"MT Pro M #6","year":2008,"mpf":228,"category":"Players Classic"},{"brand":"Callaway","model":"X Forged #6","year":2013,"mpf":373,"category":"Players Classic"},{"brand":"TaylorMade","model":"Tour Preferred MC #6","year":2014,"mpf":218,"category":"Players Classic"},{"brand":"Mizuno","model":"Pro MP-11","year":1991,"mpf":373,"category":"Players Classic"},{"brand":"TaylorMade","model":"R9 TP #6","year":2010,"mpf":218,"category":"Players Classic"},{"brand":"Maxfli","model":"DP-801","year":1996,"mpf":372,"category":"Players Classic"},{"brand":"Browning","model":"John Browning (forged)","year":1994,"mpf":218,"category":"Players Classic"},{"brand":"Mizuno","model":"MP-18 MMC #6","year":2018,"mpf":371,"category":"Players Classic"},{"brand":"Spalding","model":"Executive focal powered","year":1965,"mpf":218,"category":"Players Classic"},{"brand":"Wilson","model":"FG Tour V2 #6","year":2014,"mpf":369,"category":"Players Classic"},{"brand":"Adams","model":"Idea Tech V4 Forged #6","year":2013,"mpf":212,"category":"Players Classic"},{"brand":"MacGregor","model":"Nicklaus Golden Bear","year":1986,"mpf":368,"category":"Players Classic"},{"brand":"Tommy Armour","model":"Ti-100 Titanium","year":1997,"mpf":212,"category":"Players Classic"},{"brand":"Nakashima","model":"NX-1 #6","year":2006,"mpf":367,"category":"Players Classic"},{"brand":"Cobra","model":"King Forged MB #6","year":2016,"mpf":210,"category":"Players Classic"},{"brand":"Wilson Staff","model":"Model #6","year":2020,"mpf":365,"category":"Players Classic"},{"brand":"MacGregor","model":"Tourney MT (forged)","year":1954,"mpf":208,"category":"Players Classic"},{"brand":"Mizuno","model":"S1 Forged #6","year":2025,"mpf":364,"category":"Players Classic"},{"brand":"Golfsmith","model":"Snake Eyes 650 TH 20","year":2006,"mpf":207,"category":"Players Classic"},{"brand":"Wilson","model":"C200 #6","year":2016,"mpf":364,"category":"Players Classic"},{"brand":"Golfsmith","model":"Snake Eyes Quick Strike","year":2003,"mpf":205,"category":"Players Classic"},{"brand":"Srixon","model":"Z945 #6","year":2016,"mpf":361,"category":"Players Classic"},{"brand":"Callaway","model":"Apex MB #6","year":2018,"mpf":203,"category":"Players Classic"},{"brand":"Titleist","model":"870 (forged)","year":2004,"mpf":361,"category":"Players Classic"},{"brand":"Titleist","model":"by Acushnet (forged)","year":1971,"mpf":203,"category":"Players Classic"},{"brand":"Srixon","model":"Z965 #6","year":2017,"mpf":360,"category":"Players Classic"},{"brand":"Wilson","model":"F5 FG Tour #6","year":2016,"mpf":200,"category":"Players Classic"},{"brand":"Mizuno","model":"MP-62 Forged #6","year":2009,"mpf":360,"category":"Players Classic"},{"brand":"Wishon","model":"752 O/S #5/6","year":2010,"mpf":192,"category":"Players Classic"},{"brand":"Mizuno","model":"MP-20 Forged #6","year":2020,"mpf":359,"category":"Players Classic"},{"brand":"Ben Hogan","model":"Bounce Sole (forged)","year":1966,"mpf":185,"category":"Players Classic"},{"brand":"Titleist","model":"DCI 762","year":2002,"mpf":359,"category":"Players Classic"},{"brand":"Spalding","model":"Top-Flite Syncro-Dyned","year":1953,"mpf":175,"category":"Players Classic"},{"brand":"TaylorMade","model":"RAC TP MB #6","year":2006,"mpf":358,"category":"Players Classic"},{"brand":"Ben Hogan","model":"Apex Plus (Forged)","year":1999,"mpf":163,"category":"Players Classic"},{"brand":"Nike","model":"Vr-Pro Combo Forged-S #6","year":2011,"mpf":357,"category":"Players Classic"},{"brand":"Callaway","model":"Apex TCB Forged #6","year":2022,"mpf":355,"category":"Players Classic"},{"brand":"Golfsmith","model":"Tour Cavity Forged","year":2006,"mpf":152,"category":"Players Classic"},{"brand":"Mizuno","model":"JPX 900 Tour #6","year":2017,"mpf":355,"category":"Players Classic"},{"brand":"Wilson","model":"Pro Staff Junior set","year":2001,"mpf":152,"category":"Players Classic"},{"brand":"Cleveland","model":"CG7 Tour Dynamic MCT #6","year":2010,"mpf":354,"category":"Players Classic"},{"brand":"Miura","model":"CB 501 Forged #6","year":2013,"mpf":139,"category":"Players Classic"},{"brand":"MacGregor","model":"M455 V-MASS (forged)","year":2004,"mpf":354,"category":"Players Classic"},{"brand":"Titleist","model":"Tour Model (Forged)","year":1981,"mpf":136,"category":"Players Classic"},{"brand":"Mizuno","model":"H4 Forged #6","year":2013,"mpf":353,"category":"Players Classic"},{"brand":"Mizuno","model":"MP-18 SC #6","year":2018,"mpf":135,"category":"Players Classic"},{"brand":"Srixon","model":"Z-Forged #6","year":2019,"mpf":350,"category":"Players Classic"},{"brand":"Nike","model":"Vapor Pro Combo #6","year":2015,"mpf":119,"category":"Players Classic"},{"brand":"Ram","model":"Tour Grind TG-898","year":1998,"mpf":350,"category":"Players Classic"},{"brand":"Nike","model":"Vappr Speed #6","year":2015,"mpf":116,"category":"Players Classic"},{"brand":"Takomo","model":"Iron 201 #6","year":2024,"mpf":349,"category":"Players Classic"},{"brand":"Cobra","model":"King Cobra II (oversize)","year":1999,"mpf":115,"category":"Players Classic"},{"brand":"Callaway","model":"Apex #6","year":2016,"mpf":349,"category":"Players Classic"},{"brand":"Golfsmith","model":"Pro Forged","year":2001,"mpf":112,"category":"Players Classic"},{"brand":"Mizuno","model":"MP-37 #6","year":2005,"mpf":344,"category":"Players Classic"},{"brand":"Ping","model":"i59 #6","year":2022,"mpf":103,"category":"Players Classic"},{"brand":"Titleist","model":"MB #6","year":2016,"mpf":335,"category":"Players Classic"},{"brand":"Spalding","model":"Elite MV2","year":1970,"mpf":-195,"category":"Players Classic"},{"brand":"Ben Hogan","model":"Hogan Saber (forged)","year":1958,"mpf":334,"category":"Players Classic"},{"brand":"Cleveland","model":"VAS 792 #6","year":1993,"mpf":-197,"category":"Players Classic"},{"brand":"Precept","model":"Tour Premium","year":2000,"mpf":334,"category":"Players Classic"},{"brand":"Burke","model":"Billy Burke","year":1941,"mpf":-330,"category":"Players Classic"},{"brand":"Wilson Staff","model":"Tour Blade","year":1980,"mpf":334,"category":"Players Classic"},{"brand":"MacGregor","model":"Tourney CF4000 (forged)","year":1960,"mpf":-341,"category":"Players Classic"},{"brand":"TaylorMade","model":"Burner #6","year":2010,"mpf":330,"category":"Players Classic"},{"brand":"Titleist","model":"AC108 (tungsten)","year":1972,"mpf":-412,"category":"Players Classic"},{"brand":"Spalding","model":"Symetric Set","year":1936,"mpf":-606,"category":"Players Classic"},{"brand":"Burke","model":"Mashie","year":1928,"mpf":-873,"category":"Players Classic"}];
+
+const CATEGORIES = [
+  "Ultra Game Improvement",
+  "Super Game Improvement",
+  "Game Improvement",
+  "Conventional",
+  "Classic",
+  "Players Classic"
+];
+
+const CAT_SHORT = {
+  "Ultra Game Improvement": "Ultra GI",
+  "Super Game Improvement": "Super GI",
+  "Game Improvement":       "Game Impr.",
+  "Conventional":           "Conventional",
+  "Classic":                "Classic",
+  "Players Classic":        "Players Classic"
+};
+
+// State
+let sortCol = "mpf";
+let sortDir = -1; // -1 = desc
+let activeCats = new Set(CATEGORIES);
+let searchQuery = "";
+let brandFilter = "";
+let yearMin = "";
+let yearMax = "";
+let filteredData = [];
+
+// MPF range for bar scaling
+const mpfMax = Math.max(...DATA.map(d => d.mpf));
+const mpfMin = Math.min(...DATA.map(d => d.mpf));
+
+// ─── Build filter controls ──────────────────────────────────
+const brandSelect = document.getElementById("brandSelect");
+const brands = [...new Set(DATA.map(d => d.brand))].sort((a, b) => a.localeCompare(b));
+brands.forEach(b => {
+  const opt = document.createElement("option");
+  opt.value = b;
+  opt.textContent = b;
+  brandSelect.appendChild(opt);
+});
+
+const yearMinSel = document.getElementById("yearMin");
+const yearMaxSel = document.getElementById("yearMax");
+const years = [...new Set(DATA.map(d => d.year))].sort((a, b) => a - b);
+years.forEach(y => {
+  const o1 = document.createElement("option");
+  o1.value = y;
+  o1.textContent = y;
+  yearMinSel.appendChild(o1);
+  const o2 = document.createElement("option");
+  o2.value = y;
+  o2.textContent = y;
+  yearMaxSel.appendChild(o2);
+});
+
+// ─── Category pill filter bar ───────────────────────────────
+const catBar = document.getElementById("catFilterBar");
+CATEGORIES.forEach(cat => {
+  const pill = document.createElement("button");
+  pill.className = "cat-pill";
+  pill.dataset.cat = cat;
+  pill.innerHTML = `<span class="dot"></span>${cat}`;
+  pill.setAttribute("aria-pressed", "true");
+  pill.addEventListener("click", () => {
+    if (activeCats.has(cat)) {
+      activeCats.delete(cat);
+      pill.classList.add("inactive");
+      pill.setAttribute("aria-pressed", "false");
+    } else {
+      activeCats.add(cat);
+      pill.classList.remove("inactive");
+      pill.setAttribute("aria-pressed", "true");
+    }
+    render();
+  });
+  catBar.appendChild(pill);
+});
+
+// ─── Sort ───────────────────────────────────────────────────
+document.querySelectorAll("th[data-col]").forEach(th => {
+  th.addEventListener("click", () => {
+    const col = th.dataset.col;
+    if (sortCol === col) {
+      sortDir *= -1;
+    } else {
+      sortCol = col;
+      sortDir = col === "mpf" ? -1 : 1;
+    }
+    document.querySelectorAll("th").forEach(t => {
+      t.classList.remove("sorted");
+      const arrow = t.querySelector(".sort-arrow");
+      if (arrow) arrow.textContent = "↕";
+    });
+    th.classList.add("sorted");
+    const arrow = th.querySelector(".sort-arrow");
+    if (arrow) arrow.textContent = sortDir === 1 ? "↑" : "↓";
+    render();
+  });
+  th.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); th.click(); } });
+});
+
+// init sort indicator
+document.querySelector("th[data-col='mpf']").classList.add("sorted");
+document.querySelector("th[data-col='mpf'] .sort-arrow").textContent = "↓";
+
+// ─── Filters ────────────────────────────────────────────────
+document.getElementById("searchInput").addEventListener("input", e => {
+  searchQuery = e.target.value.trim().toLowerCase();
+  render();
+});
+
+brandSelect.addEventListener("change", e => {
+  brandFilter = e.target.value;
+  render();
+});
+
+yearMinSel.addEventListener("change", e => { yearMin = e.target.value; render(); });
+yearMaxSel.addEventListener("change", e => { yearMax = e.target.value; render(); });
+
+// ─── Theme toggle ───────────────────────────────────────────
+const root = document.documentElement;
+const toggle = document.getElementById("themeToggle");
+let theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+root.dataset.theme = theme;
+
+toggle.addEventListener("click", () => {
+  theme = theme === "dark" ? "light" : "dark";
+  root.dataset.theme = theme;
+});
+
+// ─── MPF color by category ──────────────────────────────────
+const CAT_COLOR = {
+  "Ultra Game Improvement": "var(--c-ugi)",
+  "Super Game Improvement": "var(--c-sgi)",
+  "Game Improvement":       "var(--c-gi)",
+  "Conventional":           "var(--c-conv)",
+  "Classic":                "var(--c-cls)",
+  "Players Classic":        "var(--c-pcls)"
+};
+
+// ─── Render ─────────────────────────────────────────────────
+function render() {
+  filteredData = DATA.filter(d => {
+    if (!activeCats.has(d.category)) return false;
+    if (brandFilter && d.brand !== brandFilter) return false;
+    if (yearMin && d.year < parseInt(yearMin)) return false;
+    if (yearMax && d.year > parseInt(yearMax)) return false;
+    if (searchQuery) {
+      const q = searchQuery;
+      if (!d.brand.toLowerCase().includes(q) &&
+          !d.model.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  filteredData.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (typeof av === "string") {
+      av = av.toLowerCase(); bv = bv.toLowerCase();
+      return sortDir * av.localeCompare(bv);
+    }
+    return sortDir * (av - bv);
+  });
+
+  const count = filteredData.length;
+  document.getElementById("resultsCount").textContent =
+    count === DATA.length ? `${count} clubs` : `${count} of ${DATA.length} clubs`;
+
+  const tbody = document.getElementById("tableBody");
+  const noRes = document.getElementById("noResults");
+
+  if (count === 0) {
+    tbody.innerHTML = "";
+    noRes.style.display = "block";
+    return;
+  }
+  noRes.style.display = "none";
+
+  const mpfRange = mpfMax - mpfMin;
+
+  const rows = filteredData.map(d => {
+    const barPct = Math.max(4, Math.round(((d.mpf - mpfMin) / mpfRange) * 80));
+    const barColor = CAT_COLOR[d.category] || "var(--c-gi)";
+    const mpfSign = d.mpf < 0 ? "" : "";
+
+    return `<tr>
+      <td class="td-brand">${escHtml(d.brand)}</td>
+      <td class="td-model">${escHtml(d.model)}</td>
+      <td class="td-year">${d.year}</td>
+      <td class="td-mpf">
+        <div class="mpf-bar-wrap">
+          <span style="color:${barColor}">${mpfSign}${d.mpf.toLocaleString()}</span>
+          <div class="mpf-bar" style="width:${barPct}px;background:${barColor}"></div>
+        </div>
+      </td>
+      <td><span class="cat-badge" data-cat="${escHtml(d.category)}">${escHtml(d.category)}</span></td>
+    </tr>`;
+  }).join("");
+
+  tbody.innerHTML = rows;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+render();
+</script>
+</body>
+</html>
