@@ -117,17 +117,21 @@
   .cat-badge[data-cat="Players Classic"]{background:var(--c-pcls-bg);color:var(--c-pcls)}
 
   tr.detail-row td{padding:0;border-bottom:1px solid var(--border)}
-  .detail-inner{display:none;padding:16px 20px 20px;background:var(--detail-bg);gap:20px;align-items:flex-start}
+  .detail-inner{display:none;padding:20px 24px 24px;background:var(--detail-bg);gap:24px;align-items:flex-start}
   tr.detail-row.open .detail-inner{display:flex;flex-wrap:wrap}
-  .detail-img{flex-shrink:0}
-  .detail-img img{max-width:240px;max-height:150px;object-fit:contain;border-radius:4px;background:var(--surface);padding:6px;border:1px solid var(--border)}
-  .no-img{width:160px;height:100px;background:var(--bg-3);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:.75rem;border:1px solid var(--border)}
-  .detail-stats{flex:1;min-width:260px}
-  .detail-title{font-weight:700;font-size:.92rem;color:var(--text);margin-bottom:10px}
-  .stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px 14px}
-  .stat-item{display:flex;flex-direction:column;gap:1px}
-  .stat-label{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
-  .stat-value{font-family:var(--mono);font-size:.82rem;font-variant-numeric:tabular-nums;color:var(--text)}
+  .detail-img{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .detail-img img{max-width:300px;max-height:220px;object-fit:contain;border-radius:6px;background:var(--surface);padding:10px;border:1px solid var(--border)}
+  .no-img{width:200px;height:140px;background:var(--bg-3);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-3);font-size:.75rem;border:1px solid var(--border)}
+  .detail-img-label{font-size:.65rem;color:var(--text-3);text-align:center;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .detail-stats{flex:1;min-width:280px}
+  .detail-title{font-weight:700;font-size:1rem;color:var(--text);margin-bottom:16px;line-height:1.3}
+  .stat-section{margin-bottom:16px}
+  .stat-section-label{font-size:.6rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+  .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 14px;margin-top:6px}
+  @media(min-width:800px){.stat-grid{grid-template-columns:repeat(3,1fr)}}
+  .stat-item{display:flex;flex-direction:column;gap:2px}
+  .stat-label{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+  .stat-value{font-family:var(--mono);font-size:.84rem;font-variant-numeric:tabular-nums;color:var(--text)}
 
   .no-results{text-align:center;padding:60px 20px;color:var(--text-3)}
   .footer{border-top:1px solid var(--border);padding:14px 28px;font-size:.73rem;color:var(--text-3);display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
@@ -285,22 +289,35 @@ function render(){
       <td class="td-num">${d.moi!=null?d.moi.toFixed(4):"—"}</td>
       <td><span class="cat-badge" data-cat="${esc(d.category)}">${esc(d.category)}</span></td>
     </tr><tr class="detail-row"><td colspan="9"><div class="detail-inner">
-      <div class="detail-img">${imgSrc?`<img src="${imgSrc}" alt="${esc(d.brand)} ${esc(d.model)}" loading="lazy">`:`<div class="no-img">No image</div>`}</div>
+      <div class="detail-img">${imgSrc?`<img src="${imgSrc}" alt="${esc(d.brand)} ${esc(d.model)}" loading="lazy"><div class="detail-img-label">${esc(d.brand)} ${esc(d.model)}</div>`:`<div class="no-img">No image available</div>`}</div>
       <div class="detail-stats">
-        <div class="detail-title">${esc(d.brand)} ${esc(d.model)} &nbsp;<span style="font-weight:400;color:var(--text-3)">${d.year}</span></div>
-        <div class="stat-grid">
-          <div class="stat-item"><span class="stat-label">MPF Score</span><span class="stat-value">${d.mpf.toLocaleString()}</span></div>
-          <div class="stat-item"><span class="stat-label">Category</span><span class="stat-value" style="font-family:inherit;font-size:.78rem">${esc(d.category||"—")}</span></div>
-          <div class="stat-item"><span class="stat-label">Loft</span><span class="stat-value">${d.loft!=null?d.loft+"°":"—"}</span></div>
-          <div class="stat-item"><span class="stat-label">Head Weight</span><span class="stat-value">${d.weight_g!=null?d.weight_g+"g":"—"}</span></div>
-          <div class="stat-item"><span class="stat-label">MOI</span><span class="stat-value">${fmt(d.moi,4)}</span></div>
-          <div class="stat-item"><span class="stat-label">RCOG</span><span class="stat-value">${fmt(d.rcog,3)}</span></div>
-          <div class="stat-item"><span class="stat-label">VCOG Basic</span><span class="stat-value">${fmt(d.vcog_basic,3)}</span></div>
-          <div class="stat-item"><span class="stat-label">VCOG Actual</span><span class="stat-value">${fmt(d.vcog_actual,3)}</span></div>
-          <div class="stat-item"><span class="stat-label">"C" Dimension</span><span class="stat-value">${fmt(d.c_dim,3)}</span></div>
-          <div class="stat-item"><span class="stat-label">CF Actual</span><span class="stat-value">${fmt(d.cf_actual,3)}</span></div>
-          <div class="stat-item"><span class="stat-label">CF Calc.</span><span class="stat-value">${fmt(d.cf_calc,3)}</span></div>
-          <div class="stat-item"><span class="stat-label">Points</span><span class="stat-value">${d.points!=null?d.points:"—"}</span></div>
+        <div class="detail-title">${esc(d.brand)} ${esc(d.model)} <span style="font-weight:400;color:var(--text-3)">&nbsp;${d.year}</span></div>
+        <div class="stat-section">
+          <div class="stat-section-label">Physical Specs</div>
+          <div class="stat-grid">
+            <div class="stat-item"><span class="stat-label">Head Weight</span><span class="stat-value">${d.weight_g!=null?d.weight_g+" g":"—"}</span></div>
+            <div class="stat-item"><span class="stat-label">Loft Angle</span><span class="stat-value">${d.loft!=null?d.loft+"°":"—"}</span></div>
+            <div class="stat-item"><span class="stat-label">"C" Dimension (depth)</span><span class="stat-value">${fmt(d.c_dim,3)}"</span></div>
+            <div class="stat-item"><span class="stat-label">Category</span><span class="stat-value" style="font-family:inherit;font-size:.78rem">${esc(d.category||"—")}</span></div>
+          </div>
+        </div>
+        <div class="stat-section">
+          <div class="stat-section-label">Center of Gravity</div>
+          <div class="stat-grid">
+            <div class="stat-item"><span class="stat-label">MOI (g·cm²)</span><span class="stat-value">${fmt(d.moi,4)}</span></div>
+            <div class="stat-item"><span class="stat-label">RCOG (rear CG)</span><span class="stat-value">${fmt(d.rcog,3)}</span></div>
+            <div class="stat-item"><span class="stat-label">VCOG Basic (in)</span><span class="stat-value">${fmt(d.vcog_basic,3)}</span></div>
+            <div class="stat-item"><span class="stat-label">VCOG Actual (loft-adj)</span><span class="stat-value">${fmt(d.vcog_actual,3)}</span></div>
+          </div>
+        </div>
+        <div class="stat-section">
+          <div class="stat-section-label">MPF Calculation</div>
+          <div class="stat-grid">
+            <div class="stat-item"><span class="stat-label">Correction Factor (actual)</span><span class="stat-value">${fmt(d.cf_actual,3)}</span></div>
+            <div class="stat-item"><span class="stat-label">Correction Factor (calc)</span><span class="stat-value">${fmt(d.cf_calc,3)}</span></div>
+            <div class="stat-item"><span class="stat-label">Playability Points</span><span class="stat-value">${d.points!=null?d.points:"—"}</span></div>
+            <div class="stat-item"><span class="stat-label">Final MPF Score</span><span class="stat-value" style="color:${color};font-weight:700">${d.mpf.toLocaleString()}</span></div>
+          </div>
         </div>
       </div>
     </div></td></tr>`);
