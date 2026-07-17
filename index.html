@@ -88,7 +88,33 @@
   .cat-pill[data-cat="Classic"] .dot{background:var(--c-cls)}
   .cat-pill[data-cat="Players Classic"] .dot{background:var(--c-pcls)}
 
+  .layout-toggle{display:flex;gap:2px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius);padding:2px;flex-shrink:0}
+  .layout-btn{padding:4px 8px;border-radius:4px;border:none;background:none;cursor:pointer;color:var(--text-3);font-size:.8rem;line-height:1;transition:background .12s,color .12s}
+  .layout-btn:hover{color:var(--text)}
+  .layout-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+
   .table-wrapper{overflow-x:auto;padding:0 0 48px}
+  .card-grid{padding:20px 28px 48px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+  .club-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column}
+  .card-img-wrap{background:var(--bg-2);display:flex;align-items:center;justify-content:center;padding:14px;min-height:140px;border-bottom:1px solid var(--border)}
+  .card-img-wrap img{max-width:200px;max-height:120px;object-fit:contain}
+  .card-no-img{display:flex;align-items:center;justify-content:center;min-height:140px;background:var(--bg-3);color:var(--text-3);font-size:.72rem}
+  .card-body{padding:14px;flex:1;display:flex;flex-direction:column;gap:10px}
+  .card-header{display:flex;flex-direction:column;gap:4px}
+  .card-brand{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+  .card-model{font-size:.95rem;font-weight:700;color:var(--text);line-height:1.25}
+  .card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .card-year{font-size:.72rem;color:var(--text-3);font-variant-numeric:tabular-nums}
+  .mpf-bar-wrap{display:flex;align-items:center;gap:8px}
+  .mpf-score{font-family:var(--mono);font-size:1.1rem;font-weight:700;font-variant-numeric:tabular-nums;min-width:52px}
+  .mpf-bar{height:5px;border-radius:3px;flex-shrink:0;opacity:.75;flex:1}
+  .card-divider{border:none;border-top:1px solid var(--border);margin:0}
+  .stat-section{display:flex;flex-direction:column;gap:4px}
+  .stat-section-label{font-size:.58rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px}
+  .stat-item{display:flex;flex-direction:column;gap:1px}
+  .stat-label{font-size:.57rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);line-height:1.2}
+  .stat-value{font-family:var(--mono);font-size:.78rem;font-variant-numeric:tabular-nums;color:var(--text)}
   table{width:100%;border-collapse:separate;border-spacing:0;font-size:.8rem;white-space:nowrap}
   thead tr{position:sticky;top:0;z-index:10}
   th{background:var(--th-bg);border-top:1px solid var(--border);border-bottom:2px solid var(--border);padding:7px 10px;text-align:left;font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-2);cursor:pointer;user-select:none;white-space:nowrap}
@@ -152,8 +178,13 @@
     <select id="yearMax"><option value="">To</option></select>
   </div>
   <span class="results-count" id="resultsCount"></span>
+  <div class="layout-toggle">
+    <button class="layout-btn active" id="btnTable" title="Table view">⊞ Table</button>
+    <button class="layout-btn" id="btnCard" title="Card view">▦ Cards</button>
+  </div>
 </div>
 <div class="cat-filter-bar" id="catFilterBar"></div>
+<div class="card-grid" id="cardGrid" style="display:none"></div>
 <div class="table-wrapper">
 <table id="mpfTable" aria-label="MPF Iron Ratings">
 <thead><tr>
@@ -229,6 +260,20 @@ document.querySelectorAll("th[data-col]").forEach(th=>{
 const initTh=document.querySelector("th[data-col='mpf']");
 if(initTh){initTh.classList.add("sorted");const a=initTh.querySelector(".sa");if(a)a.textContent="↓";}
 
+let layout=localStorage.getItem("mpf-layout")||"table";
+const tableWrapper=document.querySelector(".table-wrapper");
+const cardGrid=document.getElementById("cardGrid");
+function applyLayout(){
+  const isCard=layout==="card";
+  tableWrapper.style.display=isCard?"none":"block";
+  cardGrid.style.display=isCard?"grid":"none";
+  document.getElementById("btnTable").classList.toggle("active",!isCard);
+  document.getElementById("btnCard").classList.toggle("active",isCard);
+}
+applyLayout();
+document.getElementById("btnTable").addEventListener("click",()=>{layout="table";localStorage.setItem("mpf-layout","table");applyLayout();render();});
+document.getElementById("btnCard").addEventListener("click",()=>{layout="card";localStorage.setItem("mpf-layout","card");applyLayout();render();});
+
 document.getElementById("searchInput").addEventListener("input",e=>{searchQuery=e.target.value.trim().toLowerCase();render();});
 brandSel.addEventListener("change",e=>{brandFilter=e.target.value;render();});
 yMin.addEventListener("change",e=>{yearMin=e.target.value;render();});
@@ -259,34 +304,86 @@ function render(){
   document.getElementById("resultsCount").textContent=filtered.length===DATA.length?`${filtered.length} clubs`:`${filtered.length} of ${DATA.length} clubs`;
   const tbody=document.getElementById("tableBody");
   const noRes=document.getElementById("noResults");
-  if(!filtered.length){tbody.innerHTML="";noRes.style.display="block";return;}
+  if(!filtered.length){tbody.innerHTML="";cardGrid.innerHTML="";noRes.style.display="block";return;}
   noRes.style.display="none";
-  const rows=[];
-  filtered.forEach(d=>{
-    const color=CAT_COLOR[d.category]||"var(--c-gi)";
-    const imgCell=d.image
-      ?`<td class="td-img"><img src="images/${esc(d.image)}" alt="${esc(d.brand)} ${esc(d.model)}" loading="lazy"></td>`
-      :`<td class="td-img"><div class="no-img"></div></td>`;
-    rows.push(`<tr>
-      ${imgCell}
-      <td class="td-brand">${esc(d.brand)}</td>
-      <td>${esc(d.model)}</td>
-      <td class="td-num">${d.year}</td>
-      <td><span class="cat-badge" data-cat="${esc(d.category)}">${esc(d.category)}</span></td>
-      <td class="td-mpf" style="color:${color}">${d.mpf.toLocaleString()}</td>
-      <td class="td-num">${d.loft!=null?d.loft:"—"}</td>
-      <td class="td-num">${d.weight_g!=null?d.weight_g:"—"}</td>
-      <td class="td-num">${fmt(d.moi,4)}</td>
-      <td class="td-num">${fmt(d.rcog,3)}</td>
-      <td class="td-num">${fmt(d.vcog_basic,3)}</td>
-      <td class="td-num">${fmt(d.vcog_actual,3)}</td>
-      <td class="td-num">${fmt(d.c_dim,3)}</td>
-      <td class="td-num">${fmt(d.cf_actual,3)}</td>
-      <td class="td-num">${fmt(d.cf_calc,3)}</td>
-      <td class="td-num">${d.points!=null?d.points:"—"}</td>
-    </tr>`);
-  });
-  tbody.innerHTML=rows.join("");
+  const mpfRange=mpfMax-mpfMin||1;
+  if(layout==="card"){
+    tbody.innerHTML="";
+    const cards=[];
+    filtered.forEach(d=>{
+      const color=CAT_COLOR[d.category]||"var(--c-gi)";
+      const barPct=Math.max(4,Math.round(((d.mpf-mpfMin)/mpfRange)*100));
+      const imgHtml=d.image
+        ?`<div class="card-img-wrap"><img src="images/${esc(d.image)}" alt="${esc(d.brand)} ${esc(d.model)}" loading="lazy"></div>`
+        :`<div class="card-no-img">No image</div>`;
+      cards.push(`<div class="club-card">
+        ${imgHtml}
+        <div class="card-body">
+          <div class="card-header">
+            <span class="card-brand">${esc(d.brand)}</span>
+            <span class="card-model">${esc(d.model)}</span>
+            <div class="card-meta"><span class="card-year">${d.year}</span><span class="cat-badge" data-cat="${esc(d.category)}">${esc(d.category)}</span></div>
+          </div>
+          <div class="mpf-bar-wrap"><span class="mpf-score" style="color:${color}">${d.mpf.toLocaleString()}</span><div class="mpf-bar" style="width:${barPct}%;background:${color}"></div></div>
+          <hr class="card-divider">
+          <div class="stat-section">
+            <div class="stat-section-label">Physical Specs</div>
+            <div class="stat-grid">
+              <div class="stat-item"><span class="stat-label">Head Weight</span><span class="stat-value">${d.weight_g!=null?d.weight_g+' g':"—"}</span></div>
+              <div class="stat-item"><span class="stat-label">Loft Angle</span><span class="stat-value">${d.loft!=null?d.loft+"°":"—"}</span></div>
+              <div class="stat-item"><span class="stat-label">"C" Dimension</span><span class="stat-value">${fmt(d.c_dim,3)}"</span></div>
+            </div>
+          </div>
+          <div class="stat-section">
+            <div class="stat-section-label">Center of Gravity</div>
+            <div class="stat-grid">
+              <div class="stat-item"><span class="stat-label">MOI (g·cm²)</span><span class="stat-value">${fmt(d.moi,4)}</span></div>
+              <div class="stat-item"><span class="stat-label">RCOG</span><span class="stat-value">${fmt(d.rcog,3)}</span></div>
+              <div class="stat-item"><span class="stat-label">VCOG Basic</span><span class="stat-value">${fmt(d.vcog_basic,3)}</span></div>
+              <div class="stat-item"><span class="stat-label">VCOG Actual</span><span class="stat-value">${fmt(d.vcog_actual,3)}</span></div>
+            </div>
+          </div>
+          <div class="stat-section">
+            <div class="stat-section-label">MPF Calculation</div>
+            <div class="stat-grid">
+              <div class="stat-item"><span class="stat-label">CF Actual</span><span class="stat-value">${fmt(d.cf_actual,3)}</span></div>
+              <div class="stat-item"><span class="stat-label">CF Calc</span><span class="stat-value">${fmt(d.cf_calc,3)}</span></div>
+              <div class="stat-item"><span class="stat-label">Points</span><span class="stat-value">${d.points!=null?d.points:"—"}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>`);
+    });
+    cardGrid.innerHTML=cards.join("");
+  } else {
+    cardGrid.innerHTML="";
+    const rows=[];
+    filtered.forEach(d=>{
+      const color=CAT_COLOR[d.category]||"var(--c-gi)";
+      const imgCell=d.image
+        ?`<td class="td-img"><img src="images/${esc(d.image)}" alt="${esc(d.brand)} ${esc(d.model)}" loading="lazy"></td>`
+        :`<td class="td-img"><div class="no-img"></div></td>`;
+      rows.push(`<tr>
+        ${imgCell}
+        <td class="td-brand">${esc(d.brand)}</td>
+        <td>${esc(d.model)}</td>
+        <td class="td-num">${d.year}</td>
+        <td><span class="cat-badge" data-cat="${esc(d.category)}">${esc(d.category)}</span></td>
+        <td class="td-mpf" style="color:${color}">${d.mpf.toLocaleString()}</td>
+        <td class="td-num">${d.loft!=null?d.loft:"—"}</td>
+        <td class="td-num">${d.weight_g!=null?d.weight_g:"—"}</td>
+        <td class="td-num">${fmt(d.moi,4)}</td>
+        <td class="td-num">${fmt(d.rcog,3)}</td>
+        <td class="td-num">${fmt(d.vcog_basic,3)}</td>
+        <td class="td-num">${fmt(d.vcog_actual,3)}</td>
+        <td class="td-num">${fmt(d.c_dim,3)}</td>
+        <td class="td-num">${fmt(d.cf_actual,3)}</td>
+        <td class="td-num">${fmt(d.cf_calc,3)}</td>
+        <td class="td-num">${d.points!=null?d.points:"—"}</td>
+      </tr>`);
+    });
+    tbody.innerHTML=rows.join("");
+  }
 }
 render();
 </script>
